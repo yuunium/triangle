@@ -327,6 +327,7 @@ function PolygonBoard({ sides, points, setPoints, result, showIdeal, onEdit }) {
 }
 
 export function App() {
+  const [started, setStarted] = useState(false);
   const [sides, setSides] = useState(() => {
     const requested = Number(
       new URLSearchParams(window.location.search).get("sides"),
@@ -344,8 +345,10 @@ export function App() {
     shapeName = POLYGON_NAMES[sides],
     message = result ? scoreMessage(result.score, sides) : null;
   useEffect(() => {
-    document.title = `SANKAKU — ${shapeName}、つくれる？`;
-  }, [shapeName]);
+    document.title = started
+      ? `SANKAKU — ${shapeName}、つくれる？`
+      : "SANKAKU — 何をつくる？";
+  }, [shapeName, started]);
   function edit() {
     setResult(null);
     setShowIdeal(false);
@@ -356,8 +359,11 @@ export function App() {
     setAnnouncement("点をリセットしました。最初の点を置いてください。");
   }
   function changeShape(event) {
-    const next = Number(event.target.value);
+    startShape(Number(event.target.value));
+  }
+  function startShape(next) {
     setSides(next);
+    setStarted(true);
     reset();
     setAnnouncement(
       `${POLYGON_NAMES[next]}に切り替えました。${next}つの点を順に置いてください。`,
@@ -371,7 +377,7 @@ export function App() {
     if (!complete || result) return;
     const next = evaluatePolygon(points);
     setResult(next);
-    setShowIdeal(false);
+    setShowIdeal(!next.degenerate && !next.selfIntersecting);
     setAnnouncement(
       `${shapeName}との一致度は${formatScore(next.score)}パーセント。${scoreMessage(next.score, sides)[0]}`,
     );
@@ -394,169 +400,217 @@ export function App() {
           <span>SANKAKU</span>
         </div>
         <span className="brand-tagline">感覚で、ぴったりを探そう。</span>
-        <label className="shape-picker">
-          <span>挑戦する形</span>
-          <select aria-label="挑戦する形" value={sides} onChange={changeShape}>
-            {SIDE_COUNTS.map((n) => (
-              <option key={n} value={n}>
-                {POLYGON_NAMES[n]}
-              </option>
-            ))}
-          </select>
-        </label>
+        {started && (
+          <label className="shape-picker">
+            <span>挑戦する形</span>
+            <select
+              aria-label="挑戦する形"
+              value={sides}
+              onChange={changeShape}
+            >
+              {SIDE_COUNTS.map((n) => (
+                <option key={n} value={n}>
+                  {POLYGON_NAMES[n]}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
       </header>
       <main>
-        <section className="intro" aria-labelledby="game-title">
-          <div>
-            <h1 id="game-title">{shapeName}、つくれる？</h1>
-            <p>
-              {sides}つの点を置いて、{shapeName}にどれだけ近いかを探しましょう。
-              <br className="desktop-break" />
-              点は採点前まで、ドラッグして調整できます。
+        {!started ? (
+          <section className="start-screen" aria-labelledby="start-title">
+            <p className="start-eyebrow">SANKAKU / 3–8 POINTS</p>
+            <h1 id="start-title">何をつくる？</h1>
+            <p className="start-description">
+              好きな形を選んで、感覚だけでつくってみよう。
             </p>
-          </div>
-          {result && (
-            <div className="result" ref={resultRef}>
-              <span className="result-eyebrow">{shapeName}との一致度</span>
-              <div className="result-number">
-                <strong>{formatScore(result.score)}</strong>
-                <span>%</span>
-              </div>
-              <p className="result-message">{message[0]}</p>
-            </div>
-          )}
-        </section>
-        <PolygonBoard
-          key={sides}
-          sides={sides}
-          points={points}
-          setPoints={setPoints}
-          result={result}
-          showIdeal={showIdeal}
-          onEdit={edit}
-        />
-        <section className="action-bar" aria-label="ゲームの操作">
-          <div
-            className={`progress ${sides > 3 ? "progress--many" : ""}`}
-            aria-label={`${sides}点中${points.length}点配置済み`}
-          >
-            <ol>
-              {LETTERS.slice(0, sides).map((letter, i) => (
-                <li
-                  key={letter}
-                  className={`${points.length >= i + 1 ? "is-placed" : ""} ${points.length === i + 1 ? "is-current" : ""}`}
-                  aria-label={`点${letter}${points.length >= i + 1 ? "配置済み" : "未配置"}`}
+            <div className="shape-choices" aria-label="最初に作る形を選択">
+              {SIDE_COUNTS.map((n) => (
+                <button
+                  key={n}
+                  className="shape-choice"
+                  onClick={() => startShape(n)}
                 >
-                  <span>{i + 1}</span>
-                </li>
+                  <span className="shape-choice-number" aria-hidden="true">
+                    0{n}
+                  </span>
+                  <span className="shape-choice-name">{POLYGON_NAMES[n]}</span>
+                  <span className="shape-choice-caption">
+                    {n}つの点でつくる
+                  </span>
+                  <ArrowRightIcon size={19} aria-hidden="true" />
+                </button>
               ))}
-            </ol>
-            <p>
-              {result
-                ? "採点できました"
-                : complete
-                  ? `${sides}点を配置しました`
-                  : `${points.length === 0 ? "最初" : `${points.length + 1}つ目`}の点を置こう`}
+            </div>
+            <p className="start-note">
+              点を置く → 納得いくまで調整 → 採点。
+              <br />
+              「もう一度」は同じ形ですぐに再挑戦できます。
             </p>
-          </div>
-          <div className="action-hint">
-            {result ? (
-              <label className="ideal-toggle">
-                <input
-                  type="checkbox"
-                  checked={showIdeal}
-                  onChange={(e) => setShowIdeal(e.target.checked)}
-                  disabled={result.degenerate || result.selfIntersecting}
-                />
-                <span>{shapeName}を重ねる</span>
-              </label>
-            ) : (
-              <>
-                <HandPointingIcon size={25} weight="light" aria-hidden="true" />
-                <span>
-                  {complete
-                    ? "点をドラッグして調整"
-                    : "好きな場所をクリック / タップ"}
-                </span>
-              </>
-            )}
-          </div>
-          <div className="actions">
-            {result ? (
-              <button
-                className="primary-button"
-                onClick={(event) => {
-                  if (event.detail < 2) reset();
-                }}
+          </section>
+        ) : (
+          <>
+            <section className="intro" aria-labelledby="game-title">
+              <div>
+                <h1 id="game-title">{shapeName}、つくれる？</h1>
+                <p>
+                  {sides}つの点を置いて、{shapeName}
+                  にどれだけ近いかを探しましょう。
+                  <br className="desktop-break" />
+                  点は採点前まで、ドラッグして調整できます。
+                </p>
+              </div>
+              {result && (
+                <div className="result" ref={resultRef}>
+                  <span className="result-eyebrow">{shapeName}との一致度</span>
+                  <div className="result-number">
+                    <strong>{formatScore(result.score)}</strong>
+                    <span>%</span>
+                  </div>
+                  <p className="result-message">{message[0]}</p>
+                </div>
+              )}
+            </section>
+            <PolygonBoard
+              key={sides}
+              sides={sides}
+              points={points}
+              setPoints={setPoints}
+              result={result}
+              showIdeal={showIdeal}
+              onEdit={edit}
+            />
+            <section className="action-bar" aria-label="ゲームの操作">
+              <div
+                className={`progress ${sides > 3 ? "progress--many" : ""}`}
+                aria-label={`${sides}点中${points.length}点配置済み`}
               >
-                <span>もう一度つくる</span>
-                <ArrowRightIcon size={22} aria-hidden="true" />
-              </button>
-            ) : (
-              <button
-                className="primary-button"
-                onClick={score}
-                disabled={!complete}
-              >
-                <span>採点する</span>
-                <ArrowRightIcon size={22} aria-hidden="true" />
-              </button>
+                <ol>
+                  {LETTERS.slice(0, sides).map((letter, i) => (
+                    <li
+                      key={letter}
+                      className={`${points.length >= i + 1 ? "is-placed" : ""} ${points.length === i + 1 ? "is-current" : ""}`}
+                      aria-label={`点${letter}${points.length >= i + 1 ? "配置済み" : "未配置"}`}
+                    >
+                      <span>{i + 1}</span>
+                    </li>
+                  ))}
+                </ol>
+                <p>
+                  {result
+                    ? "採点できました"
+                    : complete
+                      ? `${sides}点を配置しました`
+                      : `${points.length === 0 ? "最初" : `${points.length + 1}つ目`}の点を置こう`}
+                </p>
+              </div>
+              <div className="action-hint">
+                {result ? (
+                  <label className="ideal-toggle">
+                    <input
+                      type="checkbox"
+                      checked={showIdeal}
+                      onChange={(e) => setShowIdeal(e.target.checked)}
+                      disabled={result.degenerate || result.selfIntersecting}
+                    />
+                    <span>{shapeName}を重ねる</span>
+                  </label>
+                ) : (
+                  <>
+                    <HandPointingIcon
+                      size={25}
+                      weight="light"
+                      aria-hidden="true"
+                    />
+                    <span>
+                      {complete
+                        ? "点をドラッグして調整"
+                        : "好きな場所をクリック / タップ"}
+                    </span>
+                  </>
+                )}
+              </div>
+              <div className="actions">
+                {result ? (
+                  <button
+                    className="primary-button"
+                    onClick={(event) => {
+                      if (event.detail < 2) reset();
+                    }}
+                  >
+                    <span>もう一度つくる</span>
+                    <ArrowRightIcon size={22} aria-hidden="true" />
+                  </button>
+                ) : (
+                  <button
+                    className="primary-button"
+                    onClick={score}
+                    disabled={!complete}
+                  >
+                    <span>採点する</span>
+                    <ArrowRightIcon size={22} aria-hidden="true" />
+                  </button>
+                )}
+                {!result && (
+                  <button
+                    className="text-button reset-button"
+                    onClick={reset}
+                    disabled={points.length === 0}
+                  >
+                    <ArrowCounterClockwiseIcon size={17} aria-hidden="true" />
+                    <span>やり直す</span>
+                  </button>
+                )}
+              </div>
+            </section>
+            {result && (
+              <ShareResult
+                key={`${sides}-${result.score}-${points.map((p) => `${p.x},${p.y}`).join(";")}`}
+                points={points}
+                result={result}
+                sides={sides}
+              />
             )}
-            {!result && (
-              <button
-                className="text-button reset-button"
-                onClick={reset}
-                disabled={points.length === 0}
-              >
-                <ArrowCounterClockwiseIcon size={17} aria-hidden="true" />
-                <span>やり直す</span>
-              </button>
-            )}
-          </div>
-        </section>
-        {result && (
-          <ShareResult
-            key={`${sides}-${result.score}-${points.map((p) => `${p.x},${p.y}`).join(";")}`}
-            points={points}
-            result={result}
-            sides={sides}
-          />
+          </>
         )}
       </main>
-      <footer className="footer-row">
-        <p>
-          {result?.degenerate
-            ? "点が一直線、または重なっています。広げて再挑戦してみよう。"
-            : result?.selfIntersecting
-              ? "辺が交差しています。外周をたどる順に点を並べてみよう。"
-              : result
-                ? message[1]
-                : "大きさ・向きは採点に影響しません。"}
-        </p>
-        <div className="footer-actions">
-          {!result && points.length > 0 && (
+      {started && (
+        <footer className="footer-row">
+          <p>
+            {result?.degenerate
+              ? "点が一直線、または重なっています。広げて再挑戦してみよう。"
+              : result?.selfIntersecting
+                ? "辺が交差しています。外周をたどる順に点を並べてみよう。"
+                : result
+                  ? message[1]
+                  : "大きさ・向きは採点に影響しません。"}
+          </p>
+          <div className="footer-actions">
+            {!result && points.length > 0 && (
+              <button
+                className="text-button undo-button"
+                aria-label="最後に置いた1点を戻す"
+                onClick={() => {
+                  setPoints((previous) => previous.slice(0, -1));
+                  edit();
+                }}
+              >
+                <ArrowUUpLeftIcon size={15} aria-hidden="true" />
+                <span>1点戻す</span>
+              </button>
+            )}
             <button
-              className="text-button undo-button"
-              aria-label="最後に置いた1点を戻す"
-              onClick={() => {
-                setPoints((previous) => previous.slice(0, -1));
-                edit();
-              }}
+              className="text-button about-button"
+              aria-expanded={scoringHelp}
+              aria-controls="scoring-explanation"
+              onClick={() => setScoringHelp((value) => !value)}
             >
-              <ArrowUUpLeftIcon size={15} aria-hidden="true" />
-              <span>1点戻す</span>
+              採点について
             </button>
-          )}
-          <button
-            className="text-button about-button"
-            aria-expanded={scoringHelp}
-            aria-controls="scoring-explanation"
-            onClick={() => setScoringHelp((value) => !value)}
-          >
-            採点について
-          </button>
-        </div>
-      </footer>
+          </div>
+        </footer>
+      )}
       {scoringHelp && (
         <section className="scoring-explanation" id="scoring-explanation">
           <h2>辺と面積で、形を採点。</h2>
