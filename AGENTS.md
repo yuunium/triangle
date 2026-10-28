@@ -3,10 +3,10 @@
 ## Project decisions
 
 - GitHub repository: https://github.com/yuunium/triangle. Target GitHub Pages; preserve relative asset URLs.
-- Selected visual: latest option 1, warm white canvas, orange geometry, charcoal action button. Use restrained Japanese sans-serif typography and generous space.
+- Selected visual: latest option 1, warm white canvas, orange geometry, charcoal action button. Use restrained Japanese sans-serif typography and generous space. User subsequently requested removing the background dot grid; keep the board plain.
 - Preserve the loop: place 3 points in order, adjust by dragging, explicitly score, reveal percentage, continue adjusting or restart.
 - Apply Emil Kowalski's design-engineering principles: immediate functional dragging, 120ms press feedback, brief purposeful result transitions, keyboard and reduced-motion support.
-- The interactive geometry and grid are functional canvas graphics, not decorative image assets.
+- The interactive geometry is functional canvas graphics, not a decorative image asset.
 - Keep scoring in src/geometry.mjs independent of React and any future ranking service.
 
 Run the local server yourself and open the preview in the browser available to this environment. Do not give the user server-start instructions when you can run it.

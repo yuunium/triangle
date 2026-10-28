@@ -63,13 +63,6 @@ function TriangleBoard({ points, setPoints, result, showIdeal, onEdit }) {
       ctx.scale(dpr, dpr);
       // Keep the logical plane isotropic: resizing cannot distort the triangle or its score.
       const { scale, x: offsetX, y: offsetY } = getView(rect, points);
-      ctx.fillStyle = "#dce0df";
-      for (let x = 8; x < rect.width; x += 36)
-        for (let y = 10; y < rect.height; y += 36) {
-          ctx.beginPath();
-          ctx.arc(x, y, 1.15, 0, Math.PI * 2);
-          ctx.fill();
-        }
       ctx.translate(offsetX, offsetY);
       ctx.scale(scale, scale);
       const path = (vertices) => {
