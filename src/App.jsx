@@ -5,14 +5,17 @@ import { ArrowUUpLeftIcon } from "@phosphor-icons/react/dist/csr/ArrowUUpLeft";
 import { HandPointingIcon } from "@phosphor-icons/react/dist/csr/HandPointing";
 import { TriangleIcon } from "@phosphor-icons/react/dist/csr/Triangle";
 import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus";
+import { ShareResult } from "./ShareResult.jsx";
 import {
-  evaluateTriangle,
-  fitEquilateral,
+  evaluatePolygon,
+  fitRegularPolygon,
   formatScore,
   scoreMessage,
+  POLYGON_NAMES,
+  SIDE_COUNTS,
 } from "./geometry.mjs";
 
-const LETTERS = ["A", "B", "C"];
+const LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H"];
 const WIDTH = 1000,
   HEIGHT = 460,
   MARGIN = 36;
@@ -44,7 +47,7 @@ function useReducedMotion() {
   return reduced;
 }
 
-function TriangleBoard({ points, setPoints, result, showIdeal, onEdit }) {
+function PolygonBoard({ sides, points, setPoints, result, showIdeal, onEdit }) {
   const boardRef = useRef(null),
     canvasRef = useRef(null),
     dragRef = useRef(null);
@@ -70,10 +73,15 @@ function TriangleBoard({ points, setPoints, result, showIdeal, onEdit }) {
         vertices.forEach((p, i) =>
           i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y),
         );
-        if (vertices.length === 3) ctx.closePath();
+        if (vertices.length === sides) ctx.closePath();
       };
-      if (result && showIdeal && !result.degenerate) {
-        path(fitEquilateral(points));
+      if (
+        result &&
+        showIdeal &&
+        !result.degenerate &&
+        !result.selfIntersecting
+      ) {
+        path(fitRegularPolygon(points));
         ctx.strokeStyle = "#657f8a";
         ctx.lineWidth = 1.6 / scale;
         ctx.setLineDash([6 / scale, 6 / scale]);
@@ -82,7 +90,7 @@ function TriangleBoard({ points, setPoints, result, showIdeal, onEdit }) {
       }
       if (points.length > 1) {
         path(points);
-        if (points.length === 3) {
+        if (points.length === sides) {
           ctx.fillStyle = "rgba(245,83,43,0.055)";
           ctx.fill();
         }
@@ -92,7 +100,7 @@ function TriangleBoard({ points, setPoints, result, showIdeal, onEdit }) {
         ctx.lineCap = "round";
         ctx.stroke();
       }
-      if (boardFocused && points.length < 3) {
+      if (boardFocused && points.length < sides) {
         const p = keyboardCursor;
         ctx.strokeStyle = "#6f7c83";
         ctx.lineWidth = 1 / scale;
@@ -110,7 +118,7 @@ function TriangleBoard({ points, setPoints, result, showIdeal, onEdit }) {
     const resize = new ResizeObserver(draw);
     resize.observe(board);
     return () => resize.disconnect();
-  }, [points, result, showIdeal, keyboardCursor, boardFocused]);
+  }, [sides, points, result, showIdeal, keyboardCursor, boardFocused]);
   function clampPoint(point) {
     const rect = boardRef.current.getBoundingClientRect();
     const view = getView(rect, points);
@@ -134,14 +142,15 @@ function TriangleBoard({ points, setPoints, result, showIdeal, onEdit }) {
     });
   }
   function pointerDown(event) {
-    if (event.button !== 0 || dragRef.current || !event.isPrimary) return;
+    if (result || event.button !== 0 || dragRef.current || !event.isPrimary)
+      return;
     const node = event.target.closest("[data-vertex]");
     const p = eventPoint(event);
     let index;
     if (node) {
       index = Number(node.dataset.vertex);
     } else {
-      if (points.length === 3) return;
+      if (points.length === sides) return;
       index = points.length;
       setPoints((previous) => [...previous, p]);
       onEdit();
@@ -162,6 +171,7 @@ function TriangleBoard({ points, setPoints, result, showIdeal, onEdit }) {
     if (event.pointerType !== "mouse") event.preventDefault();
   }
   function pointerMove(event) {
+    if (result) return;
     const drag = dragRef.current;
     if (!drag || event.pointerId !== drag.pointerId) return;
     if (
@@ -188,6 +198,7 @@ function TriangleBoard({ points, setPoints, result, showIdeal, onEdit }) {
       boardRef.current.releasePointerCapture(event.pointerId);
   }
   function keyDown(event) {
+    if (result) return;
     const deltas = {
       ArrowLeft: [-1, 0],
       ArrowRight: [1, 0],
@@ -222,7 +233,7 @@ function TriangleBoard({ points, setPoints, result, showIdeal, onEdit }) {
     } else if (
       (event.key === "Enter" || event.key === " ") &&
       !node &&
-      points.length < 3
+      points.length < sides
     ) {
       event.preventDefault();
       onEdit();
@@ -231,11 +242,15 @@ function TriangleBoard({ points, setPoints, result, showIdeal, onEdit }) {
   }
   return (
     <div
-      className={`board ${points.length === 3 ? "board--complete" : ""}`}
+      className={`board ${points.length === sides ? "board--complete" : ""}`}
       ref={boardRef}
       role="group"
-      aria-label="作図エリア。クリックまたはタップで3点を配置。キーボードでは矢印でカーソルを動かしEnterで配置できます。"
-      tabIndex={0}
+      aria-label={
+        result
+          ? `採点済みの${POLYGON_NAMES[sides]}。点の位置は確定しています。`
+          : `作図エリア。クリックまたはタップで${sides}点を配置。キーボードでは矢印でカーソルを動かしEnterで配置できます。`
+      }
+      tabIndex={result ? -1 : 0}
       onPointerDown={pointerDown}
       onPointerMove={pointerMove}
       onPointerUp={stopDrag}
@@ -260,31 +275,64 @@ function TriangleBoard({ points, setPoints, result, showIdeal, onEdit }) {
             key={index}
             data-vertex={index}
             className="vertex"
+            disabled={Boolean(result)}
             style={{
               left: `${(p.x / WIDTH) * 100}%`,
               top: `${(p.y / HEIGHT) * 100}%`,
             }}
-            aria-label={`点${LETTERS[index]}。矢印キーで移動、Shiftで微調整。`}
+            aria-label={
+              result
+                ? `点${LETTERS[index]}。採点済み、位置は確定しています。`
+                : `点${LETTERS[index]}。矢印キーで移動、Shiftで微調整。`
+            }
           >
             <span className="vertex-halo">
               <span className="vertex-core" />
             </span>
             <span
-              className={`vertex-label ${p.y < HEIGHT / 2 ? "vertex-label--top" : ""}`}
+              className={`vertex-label ${sides > 3 ? "vertex-label--radial" : p.y < HEIGHT / 2 ? "vertex-label--top" : ""}`}
+              style={
+                sides > 3
+                  ? (() => {
+                      const center = points.reduce(
+                        (s, p) => ({
+                          x: s.x + p.x / points.length,
+                          y: s.y + p.y / points.length,
+                        }),
+                        { x: 0, y: 0 },
+                      );
+                      const angle = Math.atan2(p.y - center.y, p.x - center.x);
+                      return {
+                        transform: `translate(calc(-50% + ${Math.cos(angle) * 37}px), calc(-50% + ${Math.sin(angle) * 37}px))`,
+                      };
+                    })()
+                  : undefined
+              }
             >
               {LETTERS[index]}
             </span>
           </button>
         ))}
       </div>
-      {result && showIdeal && !result.degenerate && (
-        <div className="ideal-legend">点線：いちばん近い正三角形</div>
-      )}
+      {result &&
+        showIdeal &&
+        !result.degenerate &&
+        !result.selfIntersecting && (
+          <div className="ideal-legend">
+            点線：いちばん近い{POLYGON_NAMES[sides]}
+          </div>
+        )}
     </div>
   );
 }
 
 export function App() {
+  const [sides, setSides] = useState(() => {
+    const requested = Number(
+      new URLSearchParams(window.location.search).get("sides"),
+    );
+    return SIDE_COUNTS.includes(requested) ? requested : 3;
+  });
   const [points, setPoints] = useState([]),
     [result, setResult] = useState(null),
     [showIdeal, setShowIdeal] = useState(false),
@@ -292,8 +340,12 @@ export function App() {
     [scoringHelp, setScoringHelp] = useState(false);
   const reduced = useReducedMotion(),
     resultRef = useRef(null),
-    complete = points.length === 3,
-    message = result ? scoreMessage(result.score) : null;
+    complete = points.length === sides,
+    shapeName = POLYGON_NAMES[sides],
+    message = result ? scoreMessage(result.score, sides) : null;
+  useEffect(() => {
+    document.title = `SANKAKU — ${shapeName}、つくれる？`;
+  }, [shapeName]);
   function edit() {
     setResult(null);
     setShowIdeal(false);
@@ -303,13 +355,25 @@ export function App() {
     edit();
     setAnnouncement("点をリセットしました。最初の点を置いてください。");
   }
+  function changeShape(event) {
+    const next = Number(event.target.value);
+    setSides(next);
+    reset();
+    setAnnouncement(
+      `${POLYGON_NAMES[next]}に切り替えました。${next}つの点を順に置いてください。`,
+    );
+    const url = new URL(window.location.href);
+    if (next === 3) url.searchParams.delete("sides");
+    else url.searchParams.set("sides", String(next));
+    window.history.replaceState(null, "", url);
+  }
   function score(event) {
-    if (!complete) return;
-    const next = evaluateTriangle(points);
+    if (!complete || result) return;
+    const next = evaluatePolygon(points);
     setResult(next);
     setShowIdeal(false);
     setAnnouncement(
-      `正三角形との一致度は${formatScore(next.score)}パーセント。${scoreMessage(next.score)[0]}`,
+      `${shapeName}との一致度は${formatScore(next.score)}パーセント。${scoreMessage(next.score, sides)[0]}`,
     );
     requestAnimationFrame(() => {
       if (!reduced && event.detail !== 0)
@@ -329,21 +393,31 @@ export function App() {
           <TriangleIcon weight="bold" size={22} aria-hidden="true" />
           <span>SANKAKU</span>
         </div>
-        <span className="brand-tagline">感覚で、60°を探そう。</span>
+        <span className="brand-tagline">感覚で、ぴったりを探そう。</span>
+        <label className="shape-picker">
+          <span>挑戦する形</span>
+          <select aria-label="挑戦する形" value={sides} onChange={changeShape}>
+            {SIDE_COUNTS.map((n) => (
+              <option key={n} value={n}>
+                {POLYGON_NAMES[n]}
+              </option>
+            ))}
+          </select>
+        </label>
       </header>
       <main>
         <section className="intro" aria-labelledby="game-title">
           <div>
-            <h1 id="game-title">正三角形、つくれる？</h1>
+            <h1 id="game-title">{shapeName}、つくれる？</h1>
             <p>
-              3つの点を置いて、正三角形にどれだけ近いかを探しましょう。
+              {sides}つの点を置いて、{shapeName}にどれだけ近いかを探しましょう。
               <br className="desktop-break" />
-              点は、あとからドラッグして調整できます。
+              点は採点前まで、ドラッグして調整できます。
             </p>
           </div>
           {result && (
             <div className="result" ref={resultRef}>
-              <span className="result-eyebrow">正三角形との一致度</span>
+              <span className="result-eyebrow">{shapeName}との一致度</span>
               <div className="result-number">
                 <strong>{formatScore(result.score)}</strong>
                 <span>%</span>
@@ -352,7 +426,9 @@ export function App() {
             </div>
           )}
         </section>
-        <TriangleBoard
+        <PolygonBoard
+          key={sides}
+          sides={sides}
           points={points}
           setPoints={setPoints}
           result={result}
@@ -360,9 +436,12 @@ export function App() {
           onEdit={edit}
         />
         <section className="action-bar" aria-label="ゲームの操作">
-          <div className="progress" aria-label={`${points.length}点配置済み`}>
+          <div
+            className={`progress ${sides > 3 ? "progress--many" : ""}`}
+            aria-label={`${sides}点中${points.length}点配置済み`}
+          >
             <ol>
-              {LETTERS.map((letter, i) => (
+              {LETTERS.slice(0, sides).map((letter, i) => (
                 <li
                   key={letter}
                   className={`${points.length >= i + 1 ? "is-placed" : ""} ${points.length === i + 1 ? "is-current" : ""}`}
@@ -376,8 +455,8 @@ export function App() {
               {result
                 ? "採点できました"
                 : complete
-                  ? "3点を配置しました"
-                  : `${["最初", "2つ目", "3つ目"][points.length]}の点を置こう`}
+                  ? `${sides}点を配置しました`
+                  : `${points.length === 0 ? "最初" : `${points.length + 1}つ目`}の点を置こう`}
             </p>
           </div>
           <div className="action-hint">
@@ -387,9 +466,9 @@ export function App() {
                   type="checkbox"
                   checked={showIdeal}
                   onChange={(e) => setShowIdeal(e.target.checked)}
-                  disabled={result.degenerate}
+                  disabled={result.degenerate || result.selfIntersecting}
                 />
-                <span>正三角形を重ねる</span>
+                <span>{shapeName}を重ねる</span>
               </label>
             ) : (
               <>
@@ -404,7 +483,12 @@ export function App() {
           </div>
           <div className="actions">
             {result ? (
-              <button className="primary-button" onClick={reset}>
+              <button
+                className="primary-button"
+                onClick={(event) => {
+                  if (event.detail < 2) reset();
+                }}
+              >
                 <span>もう一度つくる</span>
                 <ArrowRightIcon size={22} aria-hidden="true" />
               </button>
@@ -418,24 +502,36 @@ export function App() {
                 <ArrowRightIcon size={22} aria-hidden="true" />
               </button>
             )}
-            <button
-              className="text-button reset-button"
-              onClick={result ? edit : reset}
-              disabled={points.length === 0}
-            >
-              <ArrowCounterClockwiseIcon size={17} aria-hidden="true" />
-              <span>{result ? "調整を続ける" : "やり直す"}</span>
-            </button>
+            {!result && (
+              <button
+                className="text-button reset-button"
+                onClick={reset}
+                disabled={points.length === 0}
+              >
+                <ArrowCounterClockwiseIcon size={17} aria-hidden="true" />
+                <span>やり直す</span>
+              </button>
+            )}
           </div>
         </section>
+        {result && (
+          <ShareResult
+            key={`${sides}-${result.score}-${points.map((p) => `${p.x},${p.y}`).join(";")}`}
+            points={points}
+            result={result}
+            sides={sides}
+          />
+        )}
       </main>
       <footer className="footer-row">
         <p>
           {result?.degenerate
             ? "点が一直線、または重なっています。広げて再挑戦してみよう。"
-            : result
-              ? message[1]
-              : "大きさ・向きは採点に影響しません。"}
+            : result?.selfIntersecting
+              ? "辺が交差しています。外周をたどる順に点を並べてみよう。"
+              : result
+                ? message[1]
+                : "大きさ・向きは採点に影響しません。"}
         </p>
         <div className="footer-actions">
           {!result && points.length > 0 && (
@@ -463,13 +559,16 @@ export function App() {
       </footer>
       {scoringHelp && (
         <section className="scoring-explanation" id="scoring-explanation">
-          <h2>3つの辺と面積で、形を採点。</h2>
+          <h2>辺と面積で、形を採点。</h2>
           <p>
-            一致度 = 4√3 × 面積 ÷（3辺それぞれの長さの2乗の合計）×
-            100。正三角形で100%、一直線につぶれると0%になります。位置・大きさ・向きは問いません。
+            一致度 = 4 × tan(π ÷ 角の数) × 面積 ÷（各辺の長さの2乗の合計）×
+            100。{shapeName}
+            で100%、一直線につぶれると0%になります。位置・大きさ・向きは問いません。三角形の採点は従来と同じです。
           </p>
           <p>
-            点線は、3点のずれの合計が最小になるように重ねた正三角形です。頂点をTabで選び、矢印キーでも調整できます。Shiftを押しながらで微調整。
+            点は外周に沿う順で置いてください。辺が交差している場合は0%です。点線は、頂点のずれの合計が最小になるように重ねた
+            {shapeName}
+            です。頂点をTabで選び、矢印キーでも調整できます。Shiftを押しながらで微調整。
           </p>
         </section>
       )}

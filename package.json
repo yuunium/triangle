@@ -8,7 +8,7 @@
     "build": "vite build && node scripts/prepare-sites-build.mjs",
     "preview": "vite preview",
     "test:sites": "node --test tests/sites-worker.test.mjs",
-    "test": "node --test tests/geometry.test.mjs"
+    "test": "node --test tests/geometry.test.mjs tests/result-image.test.mjs"
   },
   "dependencies": {
     "@fontsource-variable/noto-sans-jp": "^5.3.1",
