@@ -639,9 +639,12 @@ h1 {
   }
   .progress {
     gap: 17px;
+    min-width: 0;
   }
   .progress p {
     font-size: 12px;
+    min-width: 0;
+    flex: 1;
   }
   .progress li span {
     width: 28px;
