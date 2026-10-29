@@ -440,6 +440,9 @@ h1 {
   cursor: pointer;
   font-size: 13px;
 }
+.ideal-label-short {
+  display: none;
+}
 .ideal-toggle input {
   width: 17px;
   height: 17px;
@@ -1337,6 +1340,113 @@ h1 {
     font-size: 17px;
   }
   .share-panel p {
+    font-size: 12px;
+  }
+}
+
+/* Keep both result actions visible above the fold on phone browsers. */
+.app-shell--result .game-instructions {
+  display: none;
+}
+.app-shell--result .ranking-submission {
+  margin-top: 0;
+}
+.app-shell--result .result-sharing {
+  margin-top: 24px;
+}
+@media (max-width: 700px) {
+  .app-shell--result {
+    padding-top: max(12px, env(safe-area-inset-top, 0px));
+  }
+  .app-shell--result .intro {
+    margin-top: 12px;
+    min-height: 0;
+  }
+  .app-shell--result .intro h1 {
+    font-size: 23px;
+    line-height: 1.4;
+  }
+  .app-shell--result .result {
+    margin-top: 8px;
+  }
+  .app-shell--result .result-number strong {
+    font-size: 44px;
+  }
+  .app-shell.app-shell--result .board {
+    flex: 0 0 auto;
+    height: clamp(140px, calc(100svh - 400px), 300px);
+    min-height: 0;
+    margin-top: 8px;
+    margin-bottom: 14px;
+  }
+  .app-shell--result .ideal-legend {
+    bottom: -12px;
+    padding: 2px 0;
+    line-height: 1.3;
+  }
+  .app-shell--result .action-bar {
+    min-height: 0;
+    margin-top: 6px;
+    padding: 10px 0 14px;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 16px;
+  }
+  .app-shell--result .action-hint {
+    border: 0;
+  }
+  .app-shell--result .ideal-toggle {
+    min-height: 44px;
+  }
+  .app-shell--result .ideal-label-long {
+    display: none;
+  }
+  .app-shell--result .ideal-label-short {
+    display: inline;
+  }
+  .app-shell--result .actions .primary-button {
+    min-height: 44px;
+    padding: 0 14px;
+    gap: 10px;
+  }
+  .app-shell--result .actions .primary-button span {
+    font-size: 14px;
+    letter-spacing: 0.025em;
+  }
+  .app-shell--result .actions .primary-button svg {
+    width: 18px;
+  }
+  .app-shell--result .ranking-submission {
+    padding-top: 12px;
+  }
+  .app-shell--result .ranking-submission h2 {
+    font-size: 16px;
+  }
+  .app-shell--result .ranking-submission form {
+    margin-top: 10px;
+  }
+  .app-shell--result .ranking-form-row {
+    flex-direction: row;
+    gap: 8px;
+  }
+  .app-shell--result .ranking-form-row input {
+    flex: 1;
+    min-height: 44px;
+    padding: 8px 10px;
+  }
+  .app-shell--result .ranking-form-row button {
+    flex-shrink: 0;
+    min-height: 44px;
+    font-size: 12px;
+  }
+  .app-shell--result .ranking-submission .ranking-footnote {
+    margin-top: 8px;
+    font-size: 10px;
+    line-height: 1.6;
+  }
+  .app-shell--result .ranking-saved,
+  .app-shell--result .ranking-status {
+    margin: 8px 0;
+    padding: 0;
     font-size: 12px;
   }
 }

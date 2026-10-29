@@ -306,6 +306,9 @@ export function App() {
     setPoints([]);
     edit();
     setAnnouncement("点をリセットしました。最初の点を置いてください。");
+    requestAnimationFrame(() =>
+      window.scrollTo({ top: 0, behavior: "instant" }),
+    );
     const requestId = ++roundRequest.current;
     setRound(null);
     setRoundStatus("");
@@ -347,6 +350,7 @@ export function App() {
       `${shapeName}との一致度は${formatScore(next.score)}パーセント。${scoreMessage(next.score, sides)[0]}`,
     );
     requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: "instant" });
       if (!reduced && event.detail !== 0)
         resultRef.current?.animate(
           [
@@ -358,7 +362,9 @@ export function App() {
     });
   }
   return (
-    <div className={`app-shell ${!started ? "app-shell--start" : ""}`}>
+    <div
+      className={`app-shell ${!started ? "app-shell--start" : ""} ${result ? "app-shell--result" : ""}`}
+    >
       <header className="brand-row">
         <div className="brand">
           <TriangleIcon weight="bold" size={22} aria-hidden="true" />
@@ -458,8 +464,10 @@ export function App() {
           <>
             <section className="intro" aria-labelledby="game-title">
               <div>
-                <h1 id="game-title">{shapeName}、つくれる？</h1>
-                <p>
+                <h1 id="game-title">
+                  {result ? `${shapeName}の結果` : `${shapeName}、つくれる？`}
+                </h1>
+                <p className="game-instructions">
                   {sides}つの点を置いて、{shapeName}
                   にどれだけ近いかを探しましょう。
                   <br className="desktop-break" />
@@ -514,11 +522,17 @@ export function App() {
                   <label className="ideal-toggle">
                     <input
                       type="checkbox"
+                      aria-label={`${shapeName}を重ねる`}
                       checked={showIdeal}
                       onChange={(e) => setShowIdeal(e.target.checked)}
                       disabled={result.degenerate || result.selfIntersecting}
                     />
-                    <span>{shapeName}を重ねる</span>
+                    <span className="ideal-label-long">
+                      {shapeName}を重ねる
+                    </span>
+                    <span className="ideal-label-short" aria-hidden="true">
+                      お手本
+                    </span>
                   </label>
                 ) : (
                   <>
@@ -568,14 +582,6 @@ export function App() {
                 )}
               </div>
             </section>
-            {result && (
-              <ShareResult
-                key={`${sides}-${result.score}-${points.map((p) => `${p.x},${p.y}`).join(";")}`}
-                points={points}
-                result={result}
-                sides={sides}
-              />
-            )}
             {RANKING_ENABLED && sides === MAIN_SIDES && result && (
               <RankingSubmission
                 key={roundRequest.current}
@@ -584,6 +590,14 @@ export function App() {
                 round={round}
                 roundStatus={roundStatus}
                 onSaved={() => setRankingKey((v) => v + 1)}
+              />
+            )}
+            {result && (
+              <ShareResult
+                key={`${sides}-${result.score}-${points.map((p) => `${p.x},${p.y}`).join(";")}`}
+                points={points}
+                result={result}
+                sides={sides}
               />
             )}
           </>

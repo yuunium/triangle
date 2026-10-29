@@ -164,7 +164,7 @@ export function RankingSubmission({
       className="ranking-submission"
       aria-labelledby="save-ranking-title"
     >
-      <h2 id="save-ranking-title">この七角形を、記録に残す。</h2>
+      <h2 id="save-ranking-title">ランキングに残す</h2>
       {!valid ? (
         <p className="ranking-status">
           辺が交差した形や一直線の形は登録できません。もう一度挑戦してみよう。
@@ -177,13 +177,15 @@ export function RankingSubmission({
         </p>
       ) : (
         <form onSubmit={submit}>
-          <label htmlFor="ranking-name">ニックネーム</label>
+          <label htmlFor="ranking-name" className="sr-only">
+            ニックネーム
+          </label>
           <div className="ranking-form-row">
             <input
               id="ranking-name"
               name="nickname"
               autoComplete="nickname"
-              placeholder="名前を入力"
+              placeholder="ニックネーム"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -194,13 +196,14 @@ export function RankingSubmission({
             <button
               className="share-button"
               type="submit"
+              aria-label="ランキングに登録"
               disabled={busy || !round || !name.trim()}
             >
-              {busy ? "登録中…" : "ランキングに登録"}
+              {busy ? "登録中…" : "登録する"}
             </button>
           </div>
           <p id="ranking-consent" className="ranking-footnote">
-            1〜16文字。名前・一致度が公開されます。自己ベストを更新したときに記録が変わります。
+            1〜16文字。名前・一致度が公開されます。
           </p>
           {!round && (
             <p className="ranking-status" role="status">
