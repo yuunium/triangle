@@ -1,4 +1,19 @@
 @import "@fontsource-variable/noto-sans-jp";
+.site-links {
+  margin-top: 24px;
+  font-size: 12px;
+}
+.site-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--muted);
+  text-underline-offset: 4px;
+}
+.site-links a:focus-visible {
+  outline: 3px solid #3571a1;
+  outline-offset: 5px;
+}
 :root {
   font-family: "Noto Sans JP Variable", "Yu Gothic UI", sans-serif;
   color: #1c2a33;

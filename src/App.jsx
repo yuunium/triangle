@@ -530,6 +530,12 @@ export function App() {
           </p>
         </section>
       )}
+      <nav className="site-links" aria-label="サイト情報">
+        <a href="./privacy.html" target="_blank" rel="noopener">
+          プライバシーポリシー
+          <span className="sr-only">（新しいタブで開きます）</span>
+        </a>
+      </nav>
       <div
         className="sr-only"
         role="status"

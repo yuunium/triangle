@@ -85,6 +85,16 @@ nを角の数、面積をAとして、以下を計算します。
 
 座標の自動生成やCookieを使い分けた別人登録までは完全に防げません。ログイン不要のカジュアルなランキングです。APIはプレイヤー識別Cookieや回のトークンをランキング一覧へ公開しません。
 
+## AdSenseの導入準備
+
+ユーザー提供の`pub-1749432130339656`を`public/ads.txt`と`index.html`の所有確認メタタグに設定しています。`/ads.txt`はGoogleが指定する1行をプレーンテキストで返します。`/privacy.html`には現在のランキング・Cookie・画像共有と広告準備状況を記載し、フッターから新しいタブで開けます。
+
+現在は所有確認のみで、広告スクリプトも広告枠も有効にしていません。AdSenseの「サイト」で、登録したサイトURLに対して「ads.txtコードスニペット」または「メタタグ」で確認し、審査をリクエストします。workers.devは公開サフィックスですが、現在のURLはその下にさらにWorker名が付くため、AdSenseが登録したドメインと確認対象URLが一致するか管理画面で確認してください。URLが受け付けられない場合は、所有する独自ドメインなどへ接続してから申請します。
+
+広告表示の次の作業は、AdSenseの「広告 → 広告ユニット単位 → ディスプレイ広告」で取得したコード（`data-ad-slot`を含むもの）の反映です。自動広告は無効のまま、ランキングより下に手動の広告枠を置き、ゲーム操作との距離を確保します。表示開始前に、サイトの承認、Googleの「プライバシーとメッセージ」で必要な地域の同意設定、実際の広告事業者に合わせたプライバシーポリシーの更新を行います。
+
+参考: [サイトの追加・所有確認](https://support.google.com/adsense/answer/12169212?hl=ja)、[広告ユニットの作成](https://support.google.com/adsense/answer/9274025?hl=ja)、[必須のプライバシー開示](https://support.google.com/adsense/answer/1348695?hl=ja)、[ゲームと広告の配置](https://support.google.com/adsense/answer/2768340)、[同意管理の要件](https://support.google.com/adsense/answer/13554116?hl=ja)。
+
 ## デザイン
 
 選択した白地とオレンジの案に沿って、盤面を主役にした構成です。[Emil Kowalskiのデザイン指針](https://github.com/emilkowalski/skills)を参考に、即時の点配置、短い押下フィードバック、目的のある結果表示、reduced-motion対応を実装しています。
