@@ -13,6 +13,7 @@
 - Apply Emil Kowalski's design-engineering principles: immediate point placement, 120ms press feedback, brief purposeful result transitions, keyboard and reduced-motion support.
 - The interactive geometry is functional canvas graphics, not a decorative image asset.
 - Keep scoring in src/geometry.mjs independent of React and any future ranking service.
+- Use #正七角形ゲーム as the hashtag in result sharing and X composer text.
 - Ranking returns the top 50 heptagon records plus the current browser's own best. Recompute scores from submitted coordinates on the server; never trust a submitted score. Preserve unrounded scores in score_raw on rounds and records (at least ten decimal places of useful precision) separately from display/ranking score. Backfill existing records from their saved coordinates without changing public scores, names, timestamps or rank. Use a one-use, expiring server round tied to an HttpOnly player cookie. Store one best per browser, rank equal displayed percentages equally, and keep names public only after an explicit registration action. Keep anti-abuse limits and explain browser-local identity. This casual ranking cannot prove that submitted coordinates were placed manually.
 - Cloudflare backend lives in cloudflare/index.mjs; keep the Sites starter worker intact. Use npm test and npm run build:cloudflare before npm exec -- wrangler deploy. D1 migrations live in cloudflare/migrations; never commit credentials, .wrangler state or .dev.vars.
 
