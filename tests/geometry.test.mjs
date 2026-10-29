@@ -81,7 +81,7 @@ const regular = (n) =>
     x: Math.cos((i * 2 * Math.PI) / n),
     y: Math.sin((i * 2 * Math.PI) / n),
   }));
-test("every regular polygon from triangle through octagon scores 100 in either winding", () => {
+test("every regular polygon from triangle through heptagon scores 100 in either winding", () => {
   for (const n of SIDE_COUNTS) {
     const shape = regular(n);
     for (const input of [
@@ -152,5 +152,7 @@ test("tiny polygons remain scale invariant and unsupported counts are rejected",
       ),
       "100.00",
     );
+  assert.throws(() => evaluatePolygon(regular(8)), TypeError);
+  assert.throws(() => fitRegularPolygon(regular(8)), TypeError);
   assert.throws(() => evaluatePolygon(regular(9)), TypeError);
 });

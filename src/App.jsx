@@ -16,7 +16,7 @@ import {
   PRACTICE_SIDE_COUNTS,
 } from "./geometry.mjs";
 
-const LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H"];
+const LETTERS = ["A", "B", "C", "D", "E", "F", "G"];
 const WIDTH = 1000,
   HEIGHT = 460,
   MARGIN = 36;
@@ -360,9 +360,6 @@ export function App() {
                   </option>
                 ))}
               </optgroup>
-              <optgroup label="別のお題">
-                <option value={8}>正八角形</option>
-              </optgroup>
             </select>
           </label>
         )}
@@ -405,7 +402,7 @@ export function App() {
             </p>
             <details className="other-modes">
               <summary>
-                <span>練習・別モードを選ぶ</span>
+                <span>練習する形を選ぶ</span>
                 <ArrowRightIcon size={18} aria-hidden="true" />
               </summary>
               <h2>練習</h2>
@@ -432,16 +429,6 @@ export function App() {
                   </button>
                 ))}
               </div>
-              <h2>別のお題</h2>
-              <button className="extra-challenge" onClick={() => startShape(8)}>
-                <span>
-                  正八角形
-                  <span className="extra-challenge-caption">
-                    8つの点でつくる
-                  </span>
-                </span>
-                <ArrowRightIcon size={18} aria-hidden="true" />
-              </button>
             </details>
           </section>
         ) : (

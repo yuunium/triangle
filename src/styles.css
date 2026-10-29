@@ -869,27 +869,6 @@ h1 {
 .shape-choices--practice {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
-.extra-challenge {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  min-height: 64px;
-  border: 0;
-  border-top: 1px solid var(--line);
-  border-radius: 0;
-  background: transparent;
-  text-align: left;
-  font-size: 16px;
-  font-weight: 600;
-  padding: 14px 0;
-}
-.extra-challenge-caption {
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--muted);
-  margin-left: 18px;
-}
 @media (hover: hover) and (pointer: fine) {
   .shape-choice:hover {
     background: #f4f3ef;
@@ -935,13 +914,6 @@ h1 {
   }
   .other-modes summary {
     font-size: 12px;
-  }
-  .extra-challenge {
-    font-size: 14px;
-  }
-  .extra-challenge-caption {
-    font-size: 11px;
-    margin-left: 12px;
   }
 }
 .shape-picker select {

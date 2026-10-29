@@ -5,9 +5,8 @@ export const POLYGON_NAMES = {
   5: "正五角形",
   6: "正六角形",
   7: "正七角形",
-  8: "正八角形",
 };
-export const SIDE_COUNTS = [3, 4, 5, 6, 7, 8];
+export const SIDE_COUNTS = [3, 4, 5, 6, 7];
 export const MAIN_SIDES = 7;
 export const PRACTICE_SIDE_COUNTS = [3, 4, 5, 6];
 
@@ -17,7 +16,7 @@ function validatePoints(points) {
     !SIDE_COUNTS.includes(points.length) ||
     points.some((p) => !p || !Number.isFinite(p.x) || !Number.isFinite(p.y))
   )
-    throw new TypeError("3–8 finite points are required.");
+    throw new TypeError("3–7 finite points are required.");
 }
 
 function intersects(a, b, c, d) {
