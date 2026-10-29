@@ -467,12 +467,6 @@ export function App() {
                 <h1 id="game-title">
                   {result ? `${shapeName}の結果` : `${shapeName}、つくれる？`}
                 </h1>
-                <p className="game-instructions">
-                  {sides}つの点を置いて、{shapeName}
-                  にどれだけ近いかを探しましょう。
-                  <br className="desktop-break" />
-                  置いた点は動かせません。外周をたどる順に、一発勝負。
-                </p>
               </div>
               {result && (
                 <div className="result" ref={resultRef}>

@@ -1345,8 +1345,9 @@ h1 {
 }
 
 /* Keep both result actions visible above the fold on phone browsers. */
-.app-shell--result .game-instructions {
-  display: none;
+.intro:not(:has(.result)) {
+  min-height: 0;
+  margin-bottom: 20px;
 }
 .app-shell--result .ranking-submission {
   margin-top: 0;
