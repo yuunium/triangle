@@ -16,7 +16,8 @@ test("X composer uses the selected shape, finalized score and matching challenge
   );
   assert.ok(resultShareText(4, 80).includes("正方形"));
 });
-test("triangle challenge retains the original URL and no false 100 percent is shared", () => {
-  assert.equal(challengeUrl(3), "https://yuunium.github.io/triangle/");
+test("heptagon is the canonical challenge and other modes keep explicit shape URLs", () => {
+  assert.equal(challengeUrl(7), "https://yuunium.github.io/triangle/");
+  assert.equal(challengeUrl(3), "https://yuunium.github.io/triangle/?sides=3");
   assert.ok(resultShareText(3, 99.99998).includes("99.99%"));
 });

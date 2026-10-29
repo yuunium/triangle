@@ -13,6 +13,8 @@ import {
   scoreMessage,
   POLYGON_NAMES,
   SIDE_COUNTS,
+  MAIN_SIDES,
+  PRACTICE_SIDE_COUNTS,
 } from "./geometry.mjs";
 
 const LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H"];
@@ -332,7 +334,7 @@ export function App() {
     const requested = Number(
       new URLSearchParams(window.location.search).get("sides"),
     );
-    return SIDE_COUNTS.includes(requested) ? requested : 3;
+    return SIDE_COUNTS.includes(requested) ? requested : MAIN_SIDES;
   });
   const [points, setPoints] = useState([]),
     [result, setResult] = useState(null),
@@ -344,10 +346,13 @@ export function App() {
     complete = points.length === sides,
     shapeName = POLYGON_NAMES[sides],
     message = result ? scoreMessage(result.score, sides) : null;
+  const linkedSides = Number(
+    new URLSearchParams(window.location.search).get("sides"),
+  );
   useEffect(() => {
     document.title = started
       ? `SANKAKU — ${shapeName}、つくれる？`
-      : "SANKAKU — 何をつくる？";
+      : "SANKAKU — 正七角形、つくれる？";
   }, [shapeName, started]);
   function edit() {
     setResult(null);
@@ -369,7 +374,7 @@ export function App() {
       `${POLYGON_NAMES[next]}に切り替えました。${next}つの点を順に置いてください。`,
     );
     const url = new URL(window.location.href);
-    if (next === 3) url.searchParams.delete("sides");
+    if (next === MAIN_SIDES) url.searchParams.delete("sides");
     else url.searchParams.set("sides", String(next));
     window.history.replaceState(null, "", url);
   }
@@ -408,11 +413,19 @@ export function App() {
               value={sides}
               onChange={changeShape}
             >
-              {SIDE_COUNTS.map((n) => (
-                <option key={n} value={n}>
-                  {POLYGON_NAMES[n]}
-                </option>
-              ))}
+              <optgroup label="メインのお題">
+                <option value={MAIN_SIDES}>正七角形</option>
+              </optgroup>
+              <optgroup label="練習">
+                {PRACTICE_SIDE_COUNTS.map((n) => (
+                  <option key={n} value={n}>
+                    {POLYGON_NAMES[n]}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="別のお題">
+                <option value={8}>正八角形</option>
+              </optgroup>
             </select>
           </label>
         )}
@@ -420,34 +433,79 @@ export function App() {
       <main>
         {!started ? (
           <section className="start-screen" aria-labelledby="start-title">
-            <p className="start-eyebrow">SANKAKU / 3–8 POINTS</p>
-            <h1 id="start-title">何をつくる？</h1>
+            <p className="start-eyebrow">MAIN CHALLENGE / 7 POINTS</p>
+            <h1 id="start-title">
+              正七角形、
+              <br className="heptagon-title-break" />
+              つくれる？
+            </h1>
             <p className="start-description">
-              好きな形を選んで、感覚だけでつくってみよう。
-            </p>
-            <div className="shape-choices" aria-label="最初に作る形を選択">
-              {SIDE_COUNTS.map((n) => (
-                <button
-                  key={n}
-                  className="shape-choice"
-                  onClick={() => startShape(n)}
-                >
-                  <span className="shape-choice-number" aria-hidden="true">
-                    0{n}
-                  </span>
-                  <span className="shape-choice-name">{POLYGON_NAMES[n]}</span>
-                  <span className="shape-choice-caption">
-                    {n}つの点でつくる
-                  </span>
-                  <ArrowRightIcon size={19} aria-hidden="true" />
-                </button>
-              ))}
-            </div>
-            <p className="start-note">
-              点を置く → 納得いくまで調整 → 採点。
+              7つの点で、ぴったりを狙え。
               <br />
-              「もう一度」は同じ形ですぐに再挑戦できます。
+              あなたの目測は、何%？
             </p>
+            <button
+              className="primary-button main-challenge-action"
+              onClick={() => startShape(MAIN_SIDES)}
+            >
+              <span>正七角形に挑戦</span>
+              <ArrowRightIcon size={22} aria-hidden="true" />
+            </button>
+            {SIDE_COUNTS.includes(linkedSides) &&
+              linkedSides !== MAIN_SIDES && (
+                <button
+                  className="text-button shared-challenge"
+                  onClick={() => startShape(linkedSides)}
+                >
+                  共有された{POLYGON_NAMES[linkedSides]}に挑戦
+                  <ArrowRightIcon size={16} aria-hidden="true" />
+                </button>
+              )}
+            <p className="start-note">
+              配置 → 調整 → 一度きりの採点。
+              <br />
+              「もう一度」で、同じ形にすぐ再挑戦できます。
+            </p>
+            <details className="other-modes">
+              <summary>
+                <span>練習・別モードを選ぶ</span>
+                <ArrowRightIcon size={18} aria-hidden="true" />
+              </summary>
+              <h2>練習</h2>
+              <div
+                className="shape-choices shape-choices--practice"
+                aria-label="練習する形を選択"
+              >
+                {PRACTICE_SIDE_COUNTS.map((n) => (
+                  <button
+                    key={n}
+                    className="shape-choice"
+                    onClick={() => startShape(n)}
+                  >
+                    <span className="shape-choice-number" aria-hidden="true">
+                      0{n}
+                    </span>
+                    <span className="shape-choice-name">
+                      {POLYGON_NAMES[n]}
+                    </span>
+                    <span className="shape-choice-caption">
+                      {n}つの点でつくる
+                    </span>
+                    <ArrowRightIcon size={19} aria-hidden="true" />
+                  </button>
+                ))}
+              </div>
+              <h2>別のお題</h2>
+              <button className="extra-challenge" onClick={() => startShape(8)}>
+                <span>
+                  正八角形
+                  <span className="extra-challenge-caption">
+                    8つの点でつくる
+                  </span>
+                </span>
+                <ArrowRightIcon size={18} aria-hidden="true" />
+              </button>
+            </details>
           </section>
         ) : (
           <>

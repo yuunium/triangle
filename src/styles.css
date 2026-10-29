@@ -836,6 +836,75 @@ h1 {
   line-height: 1.9;
   color: var(--muted);
 }
+.heptagon-title-break {
+  display: none;
+}
+.main-challenge-action {
+  width: 100%;
+  max-width: 340px;
+}
+.shared-challenge {
+  margin-top: 14px;
+  min-height: 44px;
+}
+.other-modes {
+  max-width: 720px;
+  margin-top: 34px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+.other-modes summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 44px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  list-style: none;
+  touch-action: manipulation;
+}
+.other-modes summary::-webkit-details-marker {
+  display: none;
+}
+.other-modes summary:focus-visible {
+  outline: 3px solid #3571a1;
+  outline-offset: 4px;
+}
+.other-modes[open] summary svg {
+  transform: rotate(90deg);
+}
+.other-modes h2 {
+  font-size: 13px;
+  font-weight: 550;
+  margin: 24px 0 12px;
+  color: var(--muted);
+}
+.shape-choices--practice {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.extra-challenge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 64px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 14px 0;
+}
+.extra-challenge-caption {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 18px;
+}
 @media (hover: hover) and (pointer: fine) {
   .shape-choice:hover {
     background: #f4f3ef;
@@ -869,6 +938,25 @@ h1 {
   .start-note {
     font-size: 11px;
     margin-top: 22px;
+  }
+  .heptagon-title-break {
+    display: initial;
+  }
+  .start-screen h1 {
+    font-size: clamp(32px, 9vw, 40px);
+  }
+  .other-modes {
+    margin-top: 28px;
+  }
+  .other-modes summary {
+    font-size: 12px;
+  }
+  .extra-challenge {
+    font-size: 14px;
+  }
+  .extra-challenge-caption {
+    font-size: 11px;
+    margin-left: 12px;
   }
 }
 .shape-picker select {

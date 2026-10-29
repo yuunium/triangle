@@ -1,4 +1,9 @@
-import { POLYGON_NAMES, formatScore, scoreMessage } from "./geometry.mjs";
+import {
+  POLYGON_NAMES,
+  MAIN_SIDES,
+  formatScore,
+  scoreMessage,
+} from "./geometry.mjs";
 
 export const GAME_URL = "https://yuunium.github.io/triangle/";
 export function resultShareText(sides, score) {
@@ -6,7 +11,7 @@ export function resultShareText(sides, score) {
 }
 export function challengeUrl(sides) {
   const url = new URL(GAME_URL);
-  if (sides !== 3) url.searchParams.set("sides", String(sides));
+  if (sides !== MAIN_SIDES) url.searchParams.set("sides", String(sides));
   return url.href;
 }
 export function tweetIntent(sides, score) {
