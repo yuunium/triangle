@@ -7,3 +7,6 @@ dist/
 .DS_Store
 .npmrc
 design-qa.md
+.wrangler/
+.dev.vars
+.dev.vars.*

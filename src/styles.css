@@ -928,6 +928,224 @@ h1 {
   min-height: 42px;
   cursor: pointer;
 }
+
+.leaderboard,
+.ranking-submission {
+  border-top: 1px solid var(--line);
+  margin-top: 40px;
+  padding-top: 28px;
+}
+.leaderboard {
+  max-width: 870px;
+  padding-bottom: 24px;
+}
+.app-shell--start .leaderboard {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+.ranking-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.ranking-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+  margin: 0 0 10px;
+}
+.leaderboard h2,
+.ranking-submission h2 {
+  font-size: 22px;
+  line-height: 1.5;
+  margin: 0;
+  letter-spacing: 0.025em;
+}
+.ranking-description {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.8;
+  margin: 12px 0 24px;
+}
+.ranking-refresh {
+  font-size: 12px;
+  min-height: 44px;
+  white-space: nowrap;
+}
+.ranking-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  table-layout: fixed;
+}
+.ranking-table th,
+.ranking-table td {
+  padding: 16px 12px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.ranking-table thead th {
+  font-size: 11px;
+  font-weight: 450;
+  color: var(--muted);
+  padding-top: 8px;
+  padding-bottom: 12px;
+}
+.ranking-table th:first-child,
+.ranking-table td:first-child {
+  width: 64px;
+  padding-left: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.ranking-table th:last-child,
+.ranking-table td:last-child {
+  width: 120px;
+  text-align: right;
+  padding-right: 0;
+}
+.ranking-table tbody td:last-child {
+  font-weight: 650;
+  font-size: 21px;
+  font-variant-numeric: tabular-nums;
+}
+.ranking-table small {
+  font-size: 11px;
+  font-weight: 450;
+  margin-left: 4px;
+}
+.ranking-row--mine {
+  background: rgba(244, 81, 43, 0.045);
+}
+.ranking-you {
+  font-size: 10px;
+  color: var(--accent);
+  font-weight: 450;
+  display: inline-block;
+  margin-left: 10px;
+}
+.ranking-footnote {
+  font-size: 11px;
+  line-height: 1.9;
+  color: var(--muted);
+  margin: 16px 0 0;
+}
+.ranking-empty,
+.ranking-status {
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--muted);
+  padding: 12px 0;
+}
+.personal-best {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0 0 24px;
+}
+.personal-best strong {
+  font-size: 26px;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.personal-best small {
+  font-size: 12px;
+  margin-left: 4px;
+}
+.ranking-submission {
+  max-width: 870px;
+}
+.ranking-submission form {
+  margin-top: 20px;
+}
+.ranking-submission label {
+  display: block;
+  font-size: 12px;
+  font-weight: 550;
+  margin-bottom: 10px;
+}
+.ranking-form-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.ranking-form-row input {
+  width: 100%;
+  max-width: 360px;
+  min-width: 0;
+  min-height: 46px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: transparent;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 16px;
+  color: var(--ink);
+}
+.ranking-form-row input:focus-visible {
+  outline: 3px solid #3571a1;
+  outline-offset: 3px;
+}
+.ranking-saved {
+  font-size: 14px;
+  line-height: 1.9;
+  color: var(--muted);
+}
+.ranking-saved strong {
+  color: var(--accent);
+}
+.ranking-error {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #ad321c;
+}
+@media (max-width: 700px) {
+  .leaderboard,
+  .ranking-submission {
+    margin-top: 28px;
+    padding-top: 22px;
+  }
+  .leaderboard h2,
+  .ranking-submission h2 {
+    font-size: 19px;
+  }
+  .ranking-eyebrow {
+    font-size: 9px;
+  }
+  .ranking-description {
+    font-size: 12px;
+  }
+  .ranking-table {
+    font-size: 13px;
+  }
+  .ranking-table th:first-child,
+  .ranking-table td:first-child {
+    width: 38px;
+  }
+  .ranking-table th:last-child,
+  .ranking-table td:last-child {
+    width: 88px;
+  }
+  .ranking-table tbody td:last-child {
+    font-size: 18px;
+  }
+  .ranking-form-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .ranking-form-row input {
+    max-width: none;
+  }
+  .ranking-form-row button {
+    justify-content: center;
+  }
+}
 .shape-picker select:focus-visible {
   outline: 3px solid #3571a1;
   outline-offset: 3px;

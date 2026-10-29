@@ -5,7 +5,11 @@ import {
   scoreMessage,
 } from "./geometry.mjs";
 
-export const GAME_URL = "https://yuunium.github.io/triangle/";
+export const GAME_URL =
+  import.meta.env?.VITE_RANKING_ENABLED === "true" &&
+  typeof window !== "undefined"
+    ? new URL("/", window.location.href).href
+    : "https://yuunium.github.io/triangle/";
 export function resultShareText(sides, score) {
   return `${POLYGON_NAMES[sides]}との一致度 ${formatScore(score)}%！\n感覚で、ぴったりを探そう。 #SANKAKU`;
 }

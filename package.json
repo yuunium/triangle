@@ -8,7 +8,11 @@
     "build": "vite build && node scripts/prepare-sites-build.mjs",
     "preview": "vite preview",
     "test:sites": "node --test tests/sites-worker.test.mjs",
-    "test": "node --test tests/geometry.test.mjs tests/result-image.test.mjs"
+    "test": "node --test tests/geometry.test.mjs tests/result-image.test.mjs tests/ranking.test.mjs",
+    "build:cloudflare": "node scripts/build-cloudflare.mjs",
+    "build:pages": "node scripts/build-pages-redirect.mjs",
+    "dev:cloudflare": "wrangler dev",
+    "deploy:cloudflare": "npm run build:cloudflare && wrangler deploy"
   },
   "dependencies": {
     "@fontsource-variable/noto-sans-jp": "^5.3.1",
@@ -19,6 +23,7 @@
     "vite": "6.4.2"
   },
   "devDependencies": {
-    "prettier": "3.9.10"
+    "prettier": "3.9.10",
+    "wrangler": "4.155.0"
   }
 }

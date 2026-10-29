@@ -5,6 +5,8 @@ import { HandPointingIcon } from "@phosphor-icons/react/dist/csr/HandPointing";
 import { TriangleIcon } from "@phosphor-icons/react/dist/csr/Triangle";
 import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus";
 import { ShareResult } from "./ShareResult.jsx";
+import { Leaderboard, RankingSubmission } from "./Ranking.jsx";
+import { RANKING_ENABLED, rankingRequest } from "./ranking-api.mjs";
 import {
   evaluatePolygon,
   fitRegularPolygon,
@@ -267,6 +269,11 @@ function PolygonBoard({ sides, points, setPoints, result, showIdeal }) {
 
 export function App() {
   const [started, setStarted] = useState(false);
+  const [round, setRound] = useState(null),
+    [roundStatus, setRoundStatus] = useState(""),
+    [rankingKey, setRankingKey] = useState(0);
+  const roundRequest = useRef(0);
+  const roundQueue = useRef(Promise.resolve());
   const [sides, setSides] = useState(() => {
     const requested = Number(
       new URLSearchParams(window.location.search).get("sides"),
@@ -295,10 +302,26 @@ export function App() {
     setResult(null);
     setShowIdeal(false);
   }
-  function reset() {
+  function reset(nextSides = sides) {
     setPoints([]);
     edit();
     setAnnouncement("点をリセットしました。最初の点を置いてください。");
+    const requestId = ++roundRequest.current;
+    setRound(null);
+    setRoundStatus("");
+    if (RANKING_ENABLED && nextSides === MAIN_SIDES) {
+      const pending = roundQueue.current
+        .catch(() => {})
+        .then(() => rankingRequest("rounds", { sides: MAIN_SIDES }));
+      roundQueue.current = pending;
+      pending
+        .then((data) => {
+          if (requestId === roundRequest.current) setRound(data);
+        })
+        .catch((error) => {
+          if (requestId === roundRequest.current) setRoundStatus(error.message);
+        });
+    }
   }
   function changeShape(event) {
     startShape(Number(event.target.value));
@@ -306,7 +329,7 @@ export function App() {
   function startShape(next) {
     setSides(next);
     setStarted(true);
-    reset();
+    reset(next);
     setAnnouncement(
       `${POLYGON_NAMES[next]}に切り替えました。${next}つの点を順に置いてください。`,
     );
@@ -335,7 +358,7 @@ export function App() {
     });
   }
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${!started ? "app-shell--start" : ""}`}>
       <header className="brand-row">
         <div className="brand">
           <TriangleIcon weight="bold" size={22} aria-hidden="true" />
@@ -536,7 +559,7 @@ export function App() {
                 {!result && (
                   <button
                     className="text-button reset-button"
-                    onClick={reset}
+                    onClick={() => reset()}
                     disabled={points.length === 0}
                   >
                     <ArrowCounterClockwiseIcon size={17} aria-hidden="true" />
@@ -553,7 +576,20 @@ export function App() {
                 sides={sides}
               />
             )}
+            {RANKING_ENABLED && sides === MAIN_SIDES && result && (
+              <RankingSubmission
+                key={roundRequest.current}
+                points={points}
+                result={result}
+                round={round}
+                roundStatus={roundStatus}
+                onSaved={() => setRankingKey((v) => v + 1)}
+              />
+            )}
           </>
+        )}
+        {RANKING_ENABLED && (!started || sides === MAIN_SIDES) && (
+          <Leaderboard refreshKey={rankingKey} />
         )}
       </main>
       {started && (

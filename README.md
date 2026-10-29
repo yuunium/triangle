@@ -2,6 +2,8 @@
 
 **正七角形、つくれる？** 7つの点でぴったりを目指す、目測のブラウザーゲームです。三角形〜六角形での練習もあります。
 
+公開先: **https://sankaku.linetoslack.workers.dev/**
+
 ## 遊び方
 
 1. トップの「正七角形に挑戦」からメインのお題へ。「練習する形を選ぶ」を開くと、三角形〜六角形の練習を選べます。ゲーム開始後は右上から変更できます。
@@ -22,7 +24,7 @@
 
 ## ローカル開発
 
-Node.js 22以上を使用します。
+Node.js 22.17以上を使用します。
 
 ```sh
 npm ci
@@ -30,22 +32,28 @@ npm run dev
 ```
 
 ```sh
-npm test          # 採点・多角形フィット・共有URLのテスト
-npm run build    # 静的ファイルを dist/client に出力
-npm run preview  # 本番ビルドのプレビュー
+npm test                 # 採点・共有・ランキングAPI/SQLのテスト
+npm run build            # ランキングなしの静的版 / Sites互換ビルド
+npm run build:cloudflare # ランキング付き静的アセットを dist/client に出力
+npm run dev:cloudflare   # ローカルのWorkers / D1を起動
 ```
 
-React + Vite。サーバーや環境変数、外部APIへの接続は不要です。アイコンと日本語フォントもビルドに同梱されます。
+React + Vite。アイコンと日本語フォントもビルドに同梱されます。`npm run dev`はゲーム単体の開発用でランキングを表示しません。ランキングまで試す場合は初回に`npx wrangler d1 migrations apply sankaku-ranking --local`を実行し、`npm run build:cloudflare`の後に`npm run dev:cloudflare`で起動します。
 
-## GitHub Pages
+## Cloudflareへの公開
 
-`.github/workflows/pages.yml` が、mainへのpush時にテスト・ビルド・デプロイを実行します。
+ゲームの静的アセットと同じオリジンのランキングAPIを1つのWorkerで配信します。`wrangler.jsonc`にWorker名・D1の接続・連投制限を定義しています。APIや認証の秘密鍵をフロントへ埋め込みません。
 
-GitHubリポジトリの **Settings → Pages → Build and deployment → Source** を **GitHub Actions** に設定してください。その後mainにpushするか、Actionsの **Deploy GitHub Pages → Run workflow** を実行します。
+```sh
+npx wrangler login
+npm test
+npx wrangler d1 migrations apply sankaku-ranking --remote
+npm run deploy:cloudflare
+```
 
-このリポジトリの公開先は `https://yuunium.github.io/triangle/` です。公開の成否はActionsの実行結果で確認できます。
+Cloudflareのデプロイは上記コマンドで実行します。GitHub連携の自動デプロイは設定していません。WranglerのOAuth認証はPC側に保存され、リポジトリへコミットしません。
 
-Viteの`base: './'`により、リポジトリ名の付いたサブパスでもアセットを読み込めます。GitHub Pagesに必要なのは`dist/client`の静的ファイルだけです。テンプレート由来の`worker/`と`.openai/`は、将来別のホスティングへ移す場合に備えて残しています。
+以前の`https://yuunium.github.io/triangle/`は新サイトへ移動するページです。`.github/workflows/pages.yml`がmainへのpush時にテストして`npm run build:pages`の出力`dist/pages`を公開します。形を指定するクエリは維持します。テンプレート由来の`worker/`と`.openai/`はSites互換用として残し、Cloudflare本番の処理は`cloudflare/index.mjs`に分離しています。
 
 ## 採点
 
@@ -61,15 +69,17 @@ nを角の数、面積をAとして、以下を計算します。
 
 採点後の点線は、重心を保った最小二乗の正多角形です。これはずれを見比べるためのガイドで、採点式そのものとは別です。辺が交差した図形や一直線の図形ではガイドを無効にします。
 
-## 将来のランキング
+## 七角形ランキング
 
-採点はReactに依存しない`src/geometry.mjs`にまとめています。Cloudflare Workersなどでも同じモジュールを利用できます。`SCORING_VERSION`は`regular-polygon-q-v1`です。既存の`evaluateTriangle`と`fitEquilateral`も互換用に残しています。
+採点はReactに依存しない`src/geometry.mjs`にまとめ、Cloudflare Workerとブラウザーで同じモジュールを使用しています。`SCORING_VERSION`は`regular-polygon-q-v1`です。既存の`evaluateTriangle`と`fitEquilateral`も互換用に残しています。
 
-追加時の想定構成は **GitHub Pages（ゲーム）→ Cloudflare Worker（ランキングAPI）→ D1（記録）**。送信データは角の数・全頂点の座標・採点バージョン・表示名を基本とし、サーバーで一致度を再計算して保存します。角の数ごとにランキングを分けられます。現在はAPI・データベース・ランキング機能を接続していません。
+七角形の採点後、ニックネームを入力して明示的に登録します。名前・一致度は公開情報です。D1には照合用の点座標・採点バージョン・記録日時も保存します。登録前の点はサーバーへ送信しません。三角形〜六角形の練習はランキング対象外です。
 
-最初は七角形のランキングを対象に、ニックネーム・一致度・記録日時を表示する構成を想定しています。ブラウザーから送られた点数は採用せず座標から再計算し、重複送信や連投を制限します。ただし座標そのものの自動生成まで完全に防ぐものではありません。
+`POST /api/rounds`で30分有効の回を発行し、`POST /api/scores`でその回を1度だけ登録、`GET /api/leaderboard`で上位20件と自身のベストを取得します。HttpOnly・SameSiteのCookieでブラウザーを区別し、自己ベストを1件記録します。Cookie削除や別端末への変更では同じ利用者として認識しません。下がった点数や同じ点数では既存のベスト・名前を更新しません。
 
-利用者側で必要なのはCloudflareアカウントの用意とデプロイ時のログイン認証です。D1の作成、Workerとの接続、ランキング画面の実装はその後に行います。独自ドメインを用意せず`workers.dev`で開始でき、ゲーム本体をGitHub Pagesから移す必要はありません。手順は[Cloudflare D1公式ガイド](https://developers.cloudflare.com/d1/get-started/)と[workers.devの説明](https://developers.cloudflare.com/workers/configuration/routing/workers-dev/)を参照してください。
+送信された点数は信用せず、座標から再計算します。表示と同じ小数点以下2桁のスコアで順位を付け、同点は同順位にします。回の所有者・期限・採点バージョン・座標・名前・同一オリジンを確認し、重複送信は冪等に処理します。IP単位で読み込み120回/分、書き込み20回/分を目安に制限します（Cloudflare拠点単位の近似制限）。期限切れの回は新しい回の開始時に削除します。
+
+座標の自動生成やCookieを使い分けた別人登録までは完全に防げません。ログイン不要のカジュアルなランキングです。APIはプレイヤー識別Cookieや回のトークンをランキング一覧へ公開しません。
 
 ## デザイン
 
