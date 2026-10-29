@@ -164,7 +164,7 @@ export function scoreMessage(score, sides = 3) {
   if (score >= 80)
     return [
       sides === 3 ? "なかなかの、さんかく。" : "なかなかの、かたち。",
-      "もうひと調整で、もっと近づけそう。",
+      "次の一回で、もっと近づけそう。",
     ];
   if (score >= 50)
     return ["まだ、伸びしろあり。", "辺と角のバランスを、もう少し。"];

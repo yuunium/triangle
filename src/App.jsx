@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowRightIcon } from "@phosphor-icons/react/dist/csr/ArrowRight";
 import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react/dist/csr/ArrowCounterClockwise";
-import { ArrowUUpLeftIcon } from "@phosphor-icons/react/dist/csr/ArrowUUpLeft";
 import { HandPointingIcon } from "@phosphor-icons/react/dist/csr/HandPointing";
 import { TriangleIcon } from "@phosphor-icons/react/dist/csr/Triangle";
 import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus";
@@ -49,10 +48,9 @@ function useReducedMotion() {
   return reduced;
 }
 
-function PolygonBoard({ sides, points, setPoints, result, showIdeal, onEdit }) {
+function PolygonBoard({ sides, points, setPoints, result, showIdeal }) {
   const boardRef = useRef(null),
-    canvasRef = useRef(null),
-    dragRef = useRef(null);
+    canvasRef = useRef(null);
   const [keyboardCursor, setKeyboardCursor] = useState({ x: 500, y: 230 });
   const [boardFocused, setBoardFocused] = useState(false);
   useEffect(() => {
@@ -144,102 +142,50 @@ function PolygonBoard({ sides, points, setPoints, result, showIdeal, onEdit }) {
     });
   }
   function pointerDown(event) {
-    if (result || event.button !== 0 || dragRef.current || !event.isPrimary)
-      return;
-    const node = event.target.closest("[data-vertex]");
-    const p = eventPoint(event);
-    let index;
-    if (node) {
-      index = Number(node.dataset.vertex);
-    } else {
-      if (points.length === sides) return;
-      index = points.length;
-      setPoints((previous) => [...previous, p]);
-      onEdit();
-    }
-    const original = points[index] || p;
-    dragRef.current = {
-      pointerId: event.pointerId,
-      index,
-      dx: original.x - p.x,
-      dy: original.y - p.y,
-      startX: event.clientX,
-      startY: event.clientY,
-      moved: false,
-    };
-    boardRef.current.setPointerCapture(event.pointerId);
-    boardRef.current.dataset.dragging = String(index);
-    if (node) node.focus({ preventScroll: true });
-    if (event.pointerType !== "mouse") event.preventDefault();
-  }
-  function pointerMove(event) {
-    if (result) return;
-    const drag = dragRef.current;
-    if (!drag || event.pointerId !== drag.pointerId) return;
     if (
-      !drag.moved &&
-      Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 2
+      result ||
+      points.length === sides ||
+      event.button !== 0 ||
+      !event.isPrimary ||
+      event.target.closest("[data-vertex]")
     )
       return;
-    if (!drag.moved) {
-      drag.moved = true;
-      onEdit();
-    }
-    const p = eventPoint(event),
-      next = clampPoint({ x: p.x + drag.dx, y: p.y + drag.dy });
+    const p = eventPoint(event);
     setPoints((previous) =>
-      previous.map((value, index) => (index === drag.index ? next : value)),
+      previous.length < sides ? [...previous, p] : previous,
     );
-  }
-  function stopDrag(event) {
-    const drag = dragRef.current;
-    if (!drag || event.pointerId !== drag.pointerId) return;
-    dragRef.current = null;
-    delete boardRef.current.dataset.dragging;
-    if (boardRef.current.hasPointerCapture(event.pointerId))
-      boardRef.current.releasePointerCapture(event.pointerId);
+    if (event.pointerType !== "mouse") event.preventDefault();
   }
   function keyDown(event) {
-    if (result) return;
+    if (
+      result ||
+      points.length === sides ||
+      event.target !== event.currentTarget
+    )
+      return;
     const deltas = {
       ArrowLeft: [-1, 0],
       ArrowRight: [1, 0],
       ArrowUp: [0, -1],
       ArrowDown: [0, 1],
     };
-    const node = event.target.closest("[data-vertex]"),
-      delta = deltas[event.key];
+    const delta = deltas[event.key];
     if (delta) {
       event.preventDefault();
       const amount = event.shiftKey ? 1 : 8;
-      if (node) {
-        const index = Number(node.dataset.vertex);
-        onEdit();
-        setPoints((previous) =>
-          previous.map((p, i) =>
-            i === index
-              ? clampPoint({
-                  x: p.x + delta[0] * amount,
-                  y: p.y + delta[1] * amount,
-                })
-              : p,
-          ),
-        );
-      } else
-        setKeyboardCursor((p) =>
-          clampPoint({
-            x: p.x + delta[0] * amount,
-            y: p.y + delta[1] * amount,
-          }),
-        );
-    } else if (
-      (event.key === "Enter" || event.key === " ") &&
-      !node &&
-      points.length < sides
-    ) {
+      setKeyboardCursor((p) =>
+        clampPoint({
+          x: p.x + delta[0] * amount,
+          y: p.y + delta[1] * amount,
+        }),
+      );
+    } else if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      onEdit();
-      setPoints((previous) => [...previous, { ...keyboardCursor }]);
+      setPoints((previous) =>
+        previous.length < sides
+          ? [...previous, { ...keyboardCursor }]
+          : previous,
+      );
     }
   }
   return (
@@ -250,14 +196,10 @@ function PolygonBoard({ sides, points, setPoints, result, showIdeal, onEdit }) {
       aria-label={
         result
           ? `採点済みの${POLYGON_NAMES[sides]}。点の位置は確定しています。`
-          : `作図エリア。クリックまたはタップで${sides}点を配置。キーボードでは矢印でカーソルを動かしEnterで配置できます。`
+          : `作図エリア。クリックまたはタップで${sides}点を配置。置いた点は動かせません。キーボードでは矢印で次の点のカーソルを動かしEnterで配置できます。`
       }
       tabIndex={result ? -1 : 0}
       onPointerDown={pointerDown}
-      onPointerMove={pointerMove}
-      onPointerUp={stopDrag}
-      onPointerCancel={stopDrag}
-      onLostPointerCapture={stopDrag}
       onKeyDown={keyDown}
       onFocus={(e) => setBoardFocused(e.target === e.currentTarget)}
       onBlur={() => setBoardFocused(false)}
@@ -272,21 +214,16 @@ function PolygonBoard({ sides, points, setPoints, result, showIdeal, onEdit }) {
       )}
       <div className="point-plane">
         {points.map((p, index) => (
-          <button
-            type="button"
+          <span
+            role="img"
             key={index}
             data-vertex={index}
             className="vertex"
-            disabled={Boolean(result)}
             style={{
               left: `${(p.x / WIDTH) * 100}%`,
               top: `${(p.y / HEIGHT) * 100}%`,
             }}
-            aria-label={
-              result
-                ? `点${LETTERS[index]}。採点済み、位置は確定しています。`
-                : `点${LETTERS[index]}。矢印キーで移動、Shiftで微調整。`
-            }
+            aria-label={`点${LETTERS[index]}。位置は確定しています。`}
           >
             <span className="vertex-halo">
               <span className="vertex-core" />
@@ -313,7 +250,7 @@ function PolygonBoard({ sides, points, setPoints, result, showIdeal, onEdit }) {
             >
               {LETTERS[index]}
             </span>
-          </button>
+          </span>
         ))}
       </div>
       {result &&
@@ -462,7 +399,7 @@ export function App() {
                 </button>
               )}
             <p className="start-note">
-              配置 → 調整 → 一度きりの採点。
+              置いた点は動かせない。一発勝負の採点。
               <br />
               「もう一度」で、同じ形にすぐ再挑戦できます。
             </p>
@@ -516,7 +453,7 @@ export function App() {
                   {sides}つの点を置いて、{shapeName}
                   にどれだけ近いかを探しましょう。
                   <br className="desktop-break" />
-                  点は採点前まで、ドラッグして調整できます。
+                  置いた点は動かせません。外周をたどる順に、一発勝負。
                 </p>
               </div>
               {result && (
@@ -537,7 +474,6 @@ export function App() {
               setPoints={setPoints}
               result={result}
               showIdeal={showIdeal}
-              onEdit={edit}
             />
             <section className="action-bar" aria-label="ゲームの操作">
               <div
@@ -583,7 +519,7 @@ export function App() {
                     />
                     <span>
                       {complete
-                        ? "点をドラッグして調整"
+                        ? "この形で、いざ採点"
                         : "好きな場所をクリック / タップ"}
                     </span>
                   </>
@@ -645,19 +581,6 @@ export function App() {
                   : "大きさ・向きは採点に影響しません。"}
           </p>
           <div className="footer-actions">
-            {!result && points.length > 0 && (
-              <button
-                className="text-button undo-button"
-                aria-label="最後に置いた1点を戻す"
-                onClick={() => {
-                  setPoints((previous) => previous.slice(0, -1));
-                  edit();
-                }}
-              >
-                <ArrowUUpLeftIcon size={15} aria-hidden="true" />
-                <span>1点戻す</span>
-              </button>
-            )}
             <button
               className="text-button about-button"
               aria-expanded={scoringHelp}
@@ -680,7 +603,7 @@ export function App() {
           <p>
             点は外周に沿う順で置いてください。辺が交差している場合は0%です。点線は、頂点のずれの合計が最小になるように重ねた
             {shapeName}
-            です。頂点をTabで選び、矢印キーでも調整できます。Shiftを押しながらで微調整。
+            です。置いた点の移動や取り消しはできません。「やり直す」で最初から挑戦できます。
           </p>
         </section>
       )}

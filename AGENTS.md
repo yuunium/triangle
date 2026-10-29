@@ -4,11 +4,11 @@
 
 - GitHub repository: https://github.com/yuunium/triangle. Target GitHub Pages; preserve relative asset URLs.
 - Selected visual: latest option 1, warm white canvas, orange geometry, charcoal action button. Use restrained Japanese sans-serif typography and generous space. User subsequently requested removing the background dot grid; keep the board plain.
-- Preserve the loop: select a regular polygon with 3–8 vertices, place its points in perimeter order, adjust before scoring, explicitly score, then freeze that round. Scored vertices must never respond to drag or keyboard editing; restarting or switching shape begins a new round.
+- Preserve the loop: select a regular polygon with 3–8 vertices, place its points in perimeter order, explicitly score, then freeze that round. Every placed point is immediately fixed: no dragging, keyboard movement, or single-point undo, including before scoring. Keyboard arrows move only the next-point cursor. Restarting or switching shape begins a new round.
 - Make the heptagon the main challenge: initial title "正七角形、つくれる？" and a primary start action for 7 points. Put triangles through hexagons in a collapsed practice section and the octagon in a separate-challenge section. Keep SANKAKU branding. The root URL defaults to 7; shared links for other shapes must include an explicit sides parameter and have a matching entry action.
 - Restart immediately with the same shape, without asking again. Show the nearest regular polygon by default after each valid score; retain the checkbox to hide it.
 - Result sharing stays static: generate a PNG locally, offer native file sharing where supported, and provide PNG saving plus an X composer link with clear manual-attachment instructions. Do not add API secrets or automatic posting.
-- Apply Emil Kowalski's design-engineering principles: immediate functional dragging, 120ms press feedback, brief purposeful result transitions, keyboard and reduced-motion support.
+- Apply Emil Kowalski's design-engineering principles: immediate point placement, 120ms press feedback, brief purposeful result transitions, keyboard and reduced-motion support.
 - The interactive geometry is functional canvas graphics, not a decorative image asset.
 - Keep scoring in src/geometry.mjs independent of React and any future ranking service.
 

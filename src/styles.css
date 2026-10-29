@@ -133,9 +133,6 @@ h1 {
 .board--complete {
   cursor: default;
 }
-.board[data-dragging] {
-  cursor: grabbing;
-}
 .board canvas {
   display: block;
   position: absolute;
@@ -164,15 +161,11 @@ h1 {
   border-radius: 50%;
   pointer-events: auto;
   touch-action: none;
-  cursor: grab;
+  cursor: default;
   display: grid;
   place-items: center;
   transition: none;
   z-index: 2;
-}
-.vertex:active:not(:disabled) {
-  transform: none;
-  cursor: grabbing;
 }
 .vertex-halo {
   width: 52px;
@@ -193,10 +186,6 @@ h1 {
   background: var(--accent);
   border: 2px solid #fffdf9;
   box-shadow: 0 0 0 1.5px var(--accent);
-}
-.vertex:active .vertex-halo {
-  background: rgba(244, 81, 43, 0.17);
-  transform: scale(1.1);
 }
 .vertex-label {
   position: absolute;
@@ -495,9 +484,6 @@ h1 {
   .text-button:hover:not(:disabled) {
     color: var(--accent);
   }
-  .vertex:hover .vertex-halo {
-    background: rgba(244, 81, 43, 0.15);
-  }
 }
 @media (max-width: 1250px) {
   .app-shell {
@@ -761,8 +747,7 @@ h1 {
       background-color 100ms ease,
       color 100ms ease;
   }
-  button:active:not(:disabled),
-  .vertex:active .vertex-halo {
+  button:active:not(:disabled) {
     transform: none;
   }
 }
@@ -975,19 +960,12 @@ h1 {
   outline: 3px solid #3571a1;
   outline-offset: 3px;
 }
-.vertex:disabled {
-  cursor: default;
-  opacity: 1;
-}
 .vertex-label--radial {
   left: 50%;
   right: auto;
   top: 50%;
   bottom: auto;
   min-width: 20px;
-}
-.vertex:disabled .vertex-halo {
-  background: rgba(244, 81, 43, 0.07);
 }
 .progress--many ol {
   gap: 6px;
