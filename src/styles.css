@@ -1359,24 +1359,31 @@ h1 {
     padding-top: max(12px, env(safe-area-inset-top, 0px));
   }
   .app-shell--result .intro {
-    margin-top: 12px;
+    margin-top: 4px;
     min-height: 0;
   }
-  .app-shell--result .intro h1 {
-    font-size: 23px;
-    line-height: 1.4;
+  .app-shell--result .intro h1,
+  .app-shell--result .ranking-submission h2 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .app-shell--result .result {
-    margin-top: 8px;
+    margin-top: 0;
   }
   .app-shell--result .result-number strong {
     font-size: 44px;
   }
   .app-shell.app-shell--result .board {
     flex: 0 0 auto;
-    height: clamp(140px, calc(100svh - 400px), 300px);
-    min-height: 0;
-    margin-top: 8px;
+    height: 300px;
+    min-height: 300px;
+    margin-top: 0;
     margin-bottom: 14px;
   }
   .app-shell--result .ideal-legend {
@@ -1386,8 +1393,8 @@ h1 {
   }
   .app-shell--result .action-bar {
     min-height: 0;
-    margin-top: 6px;
-    padding: 10px 0 14px;
+    margin-top: 0;
+    padding: 6px 0;
     grid-template-columns: auto minmax(0, 1fr);
     gap: 16px;
   }
@@ -1416,13 +1423,10 @@ h1 {
     width: 18px;
   }
   .app-shell--result .ranking-submission {
-    padding-top: 12px;
-  }
-  .app-shell--result .ranking-submission h2 {
-    font-size: 16px;
+    padding-top: 8px;
   }
   .app-shell--result .ranking-submission form {
-    margin-top: 10px;
+    margin-top: 0;
   }
   .app-shell--result .ranking-form-row {
     flex-direction: row;
@@ -1439,7 +1443,7 @@ h1 {
     font-size: 12px;
   }
   .app-shell--result .ranking-submission .ranking-footnote {
-    margin-top: 8px;
+    margin-top: 4px;
     font-size: 10px;
     line-height: 1.6;
   }

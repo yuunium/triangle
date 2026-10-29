@@ -199,7 +199,7 @@ export function RankingSubmission({
               aria-label="ランキングに登録"
               disabled={busy || !round || !name.trim()}
             >
-              {busy ? "登録中…" : "登録する"}
+              {busy ? "登録中…" : "ランキング登録"}
             </button>
           </div>
           <p id="ranking-consent" className="ranking-footnote">
