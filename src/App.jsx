@@ -13,9 +13,7 @@ import {
   formatScore,
   scoreMessage,
   POLYGON_NAMES,
-  SIDE_COUNTS,
   MAIN_SIDES,
-  PRACTICE_SIDE_COUNTS,
 } from "./geometry.mjs";
 
 const LETTERS = ["A", "B", "C", "D", "E", "F", "G"];
@@ -266,12 +264,7 @@ export function App() {
     [rankingKey, setRankingKey] = useState(0);
   const roundRequest = useRef(0);
   const roundQueue = useRef(Promise.resolve());
-  const [sides, setSides] = useState(() => {
-    const requested = Number(
-      new URLSearchParams(window.location.search).get("sides"),
-    );
-    return SIDE_COUNTS.includes(requested) ? requested : MAIN_SIDES;
-  });
+  const sides = MAIN_SIDES;
   const [points, setPoints] = useState([]),
     [result, setResult] = useState(null),
     [announcement, setAnnouncement] = useState(""),
@@ -281,9 +274,6 @@ export function App() {
     complete = points.length === sides,
     shapeName = POLYGON_NAMES[sides],
     message = result ? scoreMessage(result.score, sides) : null;
-  const linkedSides = Number(
-    new URLSearchParams(window.location.search).get("sides"),
-  );
   useEffect(() => {
     document.title = started
       ? `SANKAKU — ${shapeName}、つくれる？`
@@ -292,7 +282,7 @@ export function App() {
   function edit() {
     setResult(null);
   }
-  function reset(nextSides = sides) {
+  function reset() {
     setPoints([]);
     edit();
     setAnnouncement("点をリセットしました。最初の点を置いてください。");
@@ -302,7 +292,7 @@ export function App() {
     const requestId = ++roundRequest.current;
     setRound(null);
     setRoundStatus("");
-    if (RANKING_ENABLED && nextSides === MAIN_SIDES) {
+    if (RANKING_ENABLED) {
       const pending = roundQueue.current
         .catch(() => {})
         .then(() => rankingRequest("rounds", { sides: MAIN_SIDES }));
@@ -316,19 +306,12 @@ export function App() {
         });
     }
   }
-  function changeShape(event) {
-    startShape(Number(event.target.value));
-  }
-  function startShape(next) {
-    setSides(next);
+  function startGame() {
     setStarted(true);
-    reset(next);
-    setAnnouncement(
-      `${POLYGON_NAMES[next]}に切り替えました。${next}つの点を順に置いてください。`,
-    );
+    reset();
+    setAnnouncement("7つの点を順に置いてください。");
     const url = new URL(window.location.href);
-    if (next === MAIN_SIDES) url.searchParams.delete("sides");
-    else url.searchParams.set("sides", String(next));
+    url.searchParams.delete("sides");
     window.history.replaceState(null, "", url);
   }
   function score(event) {
@@ -360,27 +343,6 @@ export function App() {
           <span>SANKAKU</span>
         </div>
         <span className="brand-tagline">感覚で、ぴったりを探そう。</span>
-        {started && (
-          <label className="shape-picker">
-            <span>挑戦する形</span>
-            <select
-              aria-label="挑戦する形"
-              value={sides}
-              onChange={changeShape}
-            >
-              <optgroup label="メインのお題">
-                <option value={MAIN_SIDES}>正七角形</option>
-              </optgroup>
-              <optgroup label="練習">
-                {PRACTICE_SIDE_COUNTS.map((n) => (
-                  <option key={n} value={n}>
-                    {POLYGON_NAMES[n]}
-                  </option>
-                ))}
-              </optgroup>
-            </select>
-          </label>
-        )}
       </header>
       <main>
         {!started ? (
@@ -398,56 +360,16 @@ export function App() {
             </p>
             <button
               className="primary-button main-challenge-action"
-              onClick={() => startShape(MAIN_SIDES)}
+              onClick={startGame}
             >
               <span>正七角形に挑戦</span>
               <ArrowRightIcon size={22} aria-hidden="true" />
             </button>
-            {SIDE_COUNTS.includes(linkedSides) &&
-              linkedSides !== MAIN_SIDES && (
-                <button
-                  className="text-button shared-challenge"
-                  onClick={() => startShape(linkedSides)}
-                >
-                  共有された{POLYGON_NAMES[linkedSides]}に挑戦
-                  <ArrowRightIcon size={16} aria-hidden="true" />
-                </button>
-              )}
             <p className="start-note">
               置いた点は動かせない。一発勝負の採点。
               <br />
               「もう一度」で、同じ形にすぐ再挑戦できます。
             </p>
-            <details className="other-modes">
-              <summary>
-                <span>練習する形を選ぶ</span>
-                <ArrowRightIcon size={18} aria-hidden="true" />
-              </summary>
-              <h2>練習</h2>
-              <div
-                className="shape-choices shape-choices--practice"
-                aria-label="練習する形を選択"
-              >
-                {PRACTICE_SIDE_COUNTS.map((n) => (
-                  <button
-                    key={n}
-                    className="shape-choice"
-                    onClick={() => startShape(n)}
-                  >
-                    <span className="shape-choice-number" aria-hidden="true">
-                      0{n}
-                    </span>
-                    <span className="shape-choice-name">
-                      {POLYGON_NAMES[n]}
-                    </span>
-                    <span className="shape-choice-caption">
-                      {n}つの点でつくる
-                    </span>
-                    <ArrowRightIcon size={19} aria-hidden="true" />
-                  </button>
-                ))}
-              </div>
-            </details>
           </section>
         ) : (
           <>

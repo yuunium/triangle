@@ -8,7 +8,6 @@ export const POLYGON_NAMES = {
 };
 export const SIDE_COUNTS = [3, 4, 5, 6, 7];
 export const MAIN_SIDES = 7;
-export const PRACTICE_SIDE_COUNTS = [3, 4, 5, 6];
 
 function validatePoints(points) {
   if (

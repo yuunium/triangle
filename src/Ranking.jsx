@@ -35,7 +35,7 @@ export function Leaderboard({ refreshKey }) {
         </button>
       </div>
       <p className="ranking-description">
-        みんなの目測、どこまでぴったり？ 上位20件の自己ベスト。
+        みんなの目測、どこまでぴったり？ 上位50件の自己ベスト。
       </p>
       {error ? (
         <p role="status" className="ranking-status">
@@ -64,7 +64,7 @@ export function Leaderboard({ refreshKey }) {
           ) : (
             <table className="ranking-table">
               <caption className="sr-only">
-                七角形の自己ベスト上位20件。同じ一致度は同順位です。
+                七角形の自己ベスト上位50件。同じ一致度は同順位です。
               </caption>
               <thead>
                 <tr>

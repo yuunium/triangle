@@ -1,9 +1,4 @@
-import {
-  POLYGON_NAMES,
-  MAIN_SIDES,
-  formatScore,
-  scoreMessage,
-} from "./geometry.mjs";
+import { POLYGON_NAMES, formatScore, scoreMessage } from "./geometry.mjs";
 
 export const GAME_URL =
   import.meta.env?.VITE_RANKING_ENABLED === "true" &&
@@ -13,10 +8,8 @@ export const GAME_URL =
 export function resultShareText(sides, score) {
   return `${POLYGON_NAMES[sides]}との一致度 ${formatScore(score)}%！\n感覚で、ぴったりを探そう。 #SANKAKU`;
 }
-export function challengeUrl(sides) {
-  const url = new URL(GAME_URL);
-  if (sides !== MAIN_SIDES) url.searchParams.set("sides", String(sides));
-  return url.href;
+export function challengeUrl() {
+  return new URL(GAME_URL).href;
 }
 export function tweetIntent(sides, score) {
   const url = new URL("https://x.com/intent/tweet");

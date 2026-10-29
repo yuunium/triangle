@@ -73,6 +73,7 @@ export function validateSubmission(input) {
     name,
     points,
     score: Number(formatScore(result.score)),
+    scoreRaw: result.score,
     roundId: input.roundId,
   };
 }
@@ -115,7 +116,7 @@ const rankedSql = `SELECT player_id, name, score, achieved_at,
 async function leaderboard(db, id) {
   const entries = await db
     .prepare(
-      `SELECT * FROM (${rankedSql}) ORDER BY score DESC, achieved_at ASC, player_id ASC LIMIT 20`,
+      `SELECT * FROM (${rankedSql}) ORDER BY score DESC, achieved_at ASC, player_id ASC LIMIT 50`,
     )
     .bind(SCORING_VERSION)
     .all();
@@ -212,19 +213,20 @@ export async function handleApi(request, env) {
     // concurrent or retried submissions cannot change its finalized score/name.
     await env.DB.batch([
       env.DB.prepare(
-        "UPDATE rounds SET consumed_at=?, name=?, score=?, points_json=? WHERE id=? AND player_id=? AND consumed_at IS NULL",
+        "UPDATE rounds SET consumed_at=?, name=?, score=?, score_raw=?, points_json=? WHERE id=? AND player_id=? AND consumed_at IS NULL",
       ).bind(
         now,
         input.name,
         input.score,
+        input.scoreRaw,
         JSON.stringify(input.points),
         input.roundId,
         id,
       ),
       env.DB.prepare(
-        `INSERT INTO records(player_id,name,score,achieved_at,round_id,points_json,scoring_version)
-        SELECT player_id,name,score,consumed_at,id,points_json,? FROM rounds WHERE id=? AND player_id=? AND consumed_at IS NOT NULL
-        ON CONFLICT(player_id) DO UPDATE SET name=excluded.name,score=excluded.score,achieved_at=excluded.achieved_at,round_id=excluded.round_id,points_json=excluded.points_json,scoring_version=excluded.scoring_version
+        `INSERT INTO records(player_id,name,score,score_raw,achieved_at,round_id,points_json,scoring_version)
+        SELECT player_id,name,score,score_raw,consumed_at,id,points_json,? FROM rounds WHERE id=? AND player_id=? AND consumed_at IS NOT NULL
+        ON CONFLICT(player_id) DO UPDATE SET name=excluded.name,score=excluded.score,score_raw=excluded.score_raw,achieved_at=excluded.achieved_at,round_id=excluded.round_id,points_json=excluded.points_json,scoring_version=excluded.scoring_version
         WHERE excluded.score > records.score OR excluded.scoring_version != records.scoring_version`,
       ).bind(SCORING_VERSION, input.roundId, id),
     ]);

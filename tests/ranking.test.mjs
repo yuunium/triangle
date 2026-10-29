@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { handleApi, validateSubmission } from "../cloudflare/index.mjs";
 import {
   SCORING_VERSION,
@@ -23,12 +23,11 @@ const sample = {
 };
 function setup() {
   const sqlite = new DatabaseSync(":memory:");
-  sqlite.exec(
-    readFileSync(
-      new URL("../cloudflare/migrations/0001_ranking.sql", import.meta.url),
-      "utf8",
-    ),
-  );
+  const migrations = new URL("../cloudflare/migrations/", import.meta.url);
+  for (const file of readdirSync(migrations)
+    .filter((name) => name.endsWith(".sql"))
+    .sort())
+    sqlite.exec(readFileSync(new URL(file, migrations), "utf8"));
   const db = {
     prepare(sql) {
       const bound = (args) => ({
@@ -193,6 +192,81 @@ test("origin, body size, rate limits, ownership and expired rounds are enforced"
     env.WRITE_LIMITER.limit = async () => ({ success: false });
     assert.equal((await a("rounds", { sides: 7 })).response.status, 429);
     assert.equal((await a("unknown")).response.status, 404);
+  } finally {
+    sqlite.close();
+  }
+});
+
+test("unrounded score survives round consumption and best storage separately from displayed score", async () => {
+  const { sqlite, client } = setup();
+  const a = client();
+  try {
+    const points = regular(7);
+    points[0].x += 17.123456789;
+    const raw = evaluatePolygon(points).score;
+    assert.notEqual(raw, Number(formatScore(raw)));
+    const round = await a("rounds", { sides: 7 });
+    const saved = await a("scores", {
+      ...sample,
+      roundId: round.data.roundId,
+      points,
+      scoreRaw: 100,
+    });
+    assert.equal(saved.response.status, 201);
+    assert.equal(saved.data.own.score, Number(formatScore(raw)));
+    assert.equal(saved.data.own.score_raw, undefined);
+    assert.equal(
+      sqlite
+        .prepare("SELECT score_raw FROM rounds WHERE id=?")
+        .get(round.data.roundId).score_raw,
+      raw,
+    );
+    const record = sqlite.prepare("SELECT score,score_raw FROM records").get();
+    assert.equal(record.score, Number(formatScore(raw)));
+    assert.equal(record.score_raw, raw);
+    assert.equal(record.score_raw.toFixed(10), raw.toFixed(10));
+  } finally {
+    sqlite.close();
+  }
+});
+
+test("leaderboard returns 50 entries and retains the current browser's rank outside the list", async () => {
+  const { sqlite, client } = setup();
+  const a = client();
+  try {
+    const round = await a("rounds", { sides: 7 });
+    const player = sqlite
+      .prepare("SELECT player_id FROM rounds WHERE id=?")
+      .get(round.data.roundId).player_id;
+    const insert = sqlite.prepare(
+      "INSERT INTO records(player_id,name,score,score_raw,achieved_at,round_id,points_json,scoring_version) VALUES(?,?,?,?,?,?,?,?)",
+    );
+    for (let i = 0; i < 55; i++)
+      insert.run(
+        crypto.randomUUID(),
+        `player${i}`,
+        100 - i,
+        100 - i,
+        i,
+        crypto.randomUUID(),
+        JSON.stringify(regular(7)),
+        SCORING_VERSION,
+      );
+    insert.run(
+      player,
+      "own",
+      1,
+      1,
+      100,
+      round.data.roundId,
+      JSON.stringify(regular(7)),
+      SCORING_VERSION,
+    );
+    const { data } = await a("leaderboard");
+    assert.equal(data.entries.length, 50);
+    assert.equal(data.entries[0].rank, 1);
+    assert.equal(data.entries.at(-1).rank, 50);
+    assert.equal(data.own.rank, 56);
   } finally {
     sqlite.close();
   }
