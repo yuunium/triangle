@@ -433,26 +433,6 @@ h1 {
   margin-top: 6px;
   color: var(--ink);
 }
-.ideal-toggle {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  cursor: pointer;
-  font-size: 13px;
-}
-.ideal-label-short {
-  display: none;
-}
-.ideal-toggle input {
-  width: 17px;
-  height: 17px;
-  accent-color: var(--accent);
-  cursor: pointer;
-}
-.ideal-toggle:has(input:disabled) {
-  opacity: 0.5;
-  cursor: default;
-}
 .scoring-explanation {
   margin-top: 18px;
   border-top: 1px solid var(--line);
@@ -525,14 +505,6 @@ h1 {
   }
   .action-bar {
     justify-content: space-between;
-  }
-  .action-bar:has(.ideal-toggle) .action-hint {
-    display: flex;
-    border-left: 0;
-    padding-left: 0;
-  }
-  .action-bar:has(.ideal-toggle) .progress ol {
-    display: none;
   }
   .result {
     min-width: 240px;
@@ -720,21 +692,6 @@ h1 {
   .app-shell:has(.result) .board {
     height: calc(100svh - 497px);
     min-height: 260px;
-  }
-  .action-bar:has(.ideal-toggle) {
-    grid-template-columns: 1fr;
-    gap: 14px;
-  }
-  .action-bar:has(.ideal-toggle) .progress {
-    display: none;
-  }
-  .action-bar:has(.ideal-toggle) .action-hint {
-    display: flex;
-    padding: 0;
-  }
-  .ideal-toggle {
-    font-size: 12px;
-    min-height: 28px;
   }
   .ideal-legend {
     font-size: 10px;
@@ -1272,7 +1229,7 @@ h1 {
     width: 21px;
     height: 21px;
   }
-  .progress--many ~ .action-hint:not(:has(.ideal-toggle)) {
+  .progress--many ~ .action-hint {
     display: none;
   }
 }
@@ -1352,6 +1309,12 @@ h1 {
 .app-shell--result .ranking-submission {
   margin-top: 0;
 }
+.app-shell--result .progress {
+  display: none;
+}
+.app-shell--result .action-bar {
+  justify-content: flex-end;
+}
 .app-shell--result .result-sharing {
   margin-top: 24px;
 }
@@ -1396,20 +1359,8 @@ h1 {
     min-height: 0;
     margin-top: 0;
     padding: 6px 0;
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: 16px;
-  }
-  .app-shell--result .action-hint {
-    border: 0;
-  }
-  .app-shell--result .ideal-toggle {
-    min-height: 44px;
-  }
-  .app-shell--result .ideal-label-long {
-    display: none;
-  }
-  .app-shell--result .ideal-label-short {
-    display: inline;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
   }
   .app-shell--result .actions .primary-button {
     min-height: 44px;

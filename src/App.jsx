@@ -50,7 +50,7 @@ function useReducedMotion() {
   return reduced;
 }
 
-function PolygonBoard({ sides, points, setPoints, result, showIdeal }) {
+function PolygonBoard({ sides, points, setPoints, result }) {
   const boardRef = useRef(null),
     canvasRef = useRef(null);
   const [keyboardCursor, setKeyboardCursor] = useState({ x: 500, y: 230 });
@@ -77,12 +77,7 @@ function PolygonBoard({ sides, points, setPoints, result, showIdeal }) {
         );
         if (vertices.length === sides) ctx.closePath();
       };
-      if (
-        result &&
-        showIdeal &&
-        !result.degenerate &&
-        !result.selfIntersecting
-      ) {
+      if (result && !result.degenerate && !result.selfIntersecting) {
         path(fitRegularPolygon(points));
         ctx.strokeStyle = "#657f8a";
         ctx.lineWidth = 1.6 / scale;
@@ -120,7 +115,7 @@ function PolygonBoard({ sides, points, setPoints, result, showIdeal }) {
     const resize = new ResizeObserver(draw);
     resize.observe(board);
     return () => resize.disconnect();
-  }, [sides, points, result, showIdeal, keyboardCursor, boardFocused]);
+  }, [sides, points, result, keyboardCursor, boardFocused]);
   function clampPoint(point) {
     const rect = boardRef.current.getBoundingClientRect();
     const view = getView(rect, points);
@@ -255,14 +250,11 @@ function PolygonBoard({ sides, points, setPoints, result, showIdeal }) {
           </span>
         ))}
       </div>
-      {result &&
-        showIdeal &&
-        !result.degenerate &&
-        !result.selfIntersecting && (
-          <div className="ideal-legend">
-            点線：いちばん近い{POLYGON_NAMES[sides]}
-          </div>
-        )}
+      {result && !result.degenerate && !result.selfIntersecting && (
+        <div className="ideal-legend">
+          点線：いちばん近い{POLYGON_NAMES[sides]}
+        </div>
+      )}
     </div>
   );
 }
@@ -282,7 +274,6 @@ export function App() {
   });
   const [points, setPoints] = useState([]),
     [result, setResult] = useState(null),
-    [showIdeal, setShowIdeal] = useState(false),
     [announcement, setAnnouncement] = useState(""),
     [scoringHelp, setScoringHelp] = useState(false);
   const reduced = useReducedMotion(),
@@ -300,7 +291,6 @@ export function App() {
   }, [shapeName, started]);
   function edit() {
     setResult(null);
-    setShowIdeal(false);
   }
   function reset(nextSides = sides) {
     setPoints([]);
@@ -345,7 +335,6 @@ export function App() {
     if (!complete || result) return;
     const next = evaluatePolygon(points);
     setResult(next);
-    setShowIdeal(!next.degenerate && !next.selfIntersecting);
     setAnnouncement(
       `${shapeName}との一致度は${formatScore(next.score)}パーセント。${scoreMessage(next.score, sides)[0]}`,
     );
@@ -485,7 +474,6 @@ export function App() {
               points={points}
               setPoints={setPoints}
               result={result}
-              showIdeal={showIdeal}
             />
             <section className="action-bar" aria-label="ゲームの操作">
               <div
@@ -511,38 +499,20 @@ export function App() {
                       : `${points.length === 0 ? "最初" : `${points.length + 1}つ目`}の点を置こう`}
                 </p>
               </div>
-              <div className="action-hint">
-                {result ? (
-                  <label className="ideal-toggle">
-                    <input
-                      type="checkbox"
-                      aria-label={`${shapeName}を重ねる`}
-                      checked={showIdeal}
-                      onChange={(e) => setShowIdeal(e.target.checked)}
-                      disabled={result.degenerate || result.selfIntersecting}
-                    />
-                    <span className="ideal-label-long">
-                      {shapeName}を重ねる
-                    </span>
-                    <span className="ideal-label-short" aria-hidden="true">
-                      お手本
-                    </span>
-                  </label>
-                ) : (
-                  <>
-                    <HandPointingIcon
-                      size={25}
-                      weight="light"
-                      aria-hidden="true"
-                    />
-                    <span>
-                      {complete
-                        ? "この形で、いざ採点"
-                        : "好きな場所をクリック / タップ"}
-                    </span>
-                  </>
-                )}
-              </div>
+              {!result && (
+                <div className="action-hint">
+                  <HandPointingIcon
+                    size={25}
+                    weight="light"
+                    aria-hidden="true"
+                  />
+                  <span>
+                    {complete
+                      ? "この形で、いざ採点"
+                      : "好きな場所をクリック / タップ"}
+                  </span>
+                </div>
+              )}
               <div className="actions">
                 {result ? (
                   <button
