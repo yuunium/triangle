@@ -49,6 +49,11 @@ test("right isosceles scores sqrt(3)/2; collinear or coincident points score zer
 });
 test("near-perfect is not falsely displayed as perfect", () => {
   assert.equal(formatScore(99.99998), "99.99");
+  assert.equal(formatScore(98.123456789, 5), "98.12346");
+  assert.equal(formatScore(99.99998, 5), "99.99998");
+  assert.equal(formatScore(99.999999, 5), "99.99999");
+  assert.equal(formatScore(100, 5), "100.00000");
+  assert.equal(formatScore(0, 5), "0.00000");
 });
 test("overlay is equilateral and preserves centroid in either winding", () => {
   const points = [

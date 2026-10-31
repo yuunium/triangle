@@ -214,6 +214,12 @@ test("unrounded score survives round consumption and best storage separately fro
     });
     assert.equal(saved.response.status, 201);
     assert.equal(saved.data.own.score, Number(formatScore(raw)));
+    assert.equal(saved.data.own.scoreDisplay, formatScore(raw, 5));
+    assert.equal(saved.data.entries[0].scoreDisplay, formatScore(raw, 5));
+    assert.notEqual(
+      saved.data.own.scoreDisplay,
+      formatScore(saved.data.own.score, 5),
+    );
     assert.equal(saved.data.own.score_raw, undefined);
     assert.equal(
       sqlite
@@ -225,6 +231,9 @@ test("unrounded score survives round consumption and best storage separately fro
     assert.equal(record.score, Number(formatScore(raw)));
     assert.equal(record.score_raw, raw);
     assert.equal(record.score_raw.toFixed(10), raw.toFixed(10));
+    sqlite.prepare("UPDATE records SET score_raw = NULL").run();
+    const legacy = await a("leaderboard");
+    assert.equal(legacy.data.own.scoreDisplay, formatScore(record.score, 5));
   } finally {
     sqlite.close();
   }

@@ -978,7 +978,7 @@ h1 {
 }
 .ranking-table th:last-child,
 .ranking-table td:last-child {
-  width: 120px;
+  width: 152px;
   text-align: right;
   padding-right: 0;
 }
@@ -986,6 +986,7 @@ h1 {
   font-weight: 650;
   font-size: 21px;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .ranking-table small {
   font-size: 11px;
@@ -1105,7 +1106,7 @@ h1 {
   }
   .ranking-table th:last-child,
   .ranking-table td:last-child {
-    width: 88px;
+    width: 120px;
   }
   .ranking-table tbody td:last-child {
     font-size: 18px;

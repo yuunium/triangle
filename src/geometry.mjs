@@ -108,8 +108,11 @@ export function evaluateTriangle(points) {
   return { ...evaluatePolygon(points), scoringVersion: "equilateral-q-v1" };
 }
 // A merely close triangle must not round up to a perfect score.
-export function formatScore(score) {
-  return (score >= 100 - 1e-10 ? 100 : Math.min(99.99, score)).toFixed(2);
+export function formatScore(score, decimalPlaces = 2) {
+  const belowPerfect = 100 - 10 ** -decimalPlaces;
+  return (score >= 100 - 1e-10 ? 100 : Math.min(belowPerfect, score)).toFixed(
+    decimalPlaces,
+  );
 }
 // Least-squares equilateral fit, preserving centroid and vertex order.
 export function fitRegularPolygon(points) {

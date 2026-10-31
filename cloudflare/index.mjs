@@ -111,7 +111,7 @@ async function bodyJson(request) {
     throw new ApiError(400, "送信内容を読み取れませんでした。");
   }
 }
-const rankedSql = `SELECT player_id, name, score, achieved_at,
+const rankedSql = `SELECT player_id, name, score, score_raw, achieved_at,
   RANK() OVER (ORDER BY score DESC) AS rank FROM records WHERE scoring_version = ?`;
 async function leaderboard(db, id) {
   const entries = await db
@@ -129,6 +129,7 @@ async function leaderboard(db, id) {
   const publicRow = (r) => ({
     name: r.name,
     score: r.score,
+    scoreDisplay: formatScore(r.score_raw ?? r.score, 5),
     rank: r.rank,
     date: new Date(r.achieved_at).toISOString(),
     mine: r.player_id === id,

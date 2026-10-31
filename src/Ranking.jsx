@@ -51,7 +51,7 @@ export function Leaderboard({ refreshKey }) {
             <p className="personal-best">
               あなたの自己ベスト{" "}
               <strong>
-                {formatScore(data.own.score)}
+                {data.own.scoreDisplay ?? formatScore(data.own.score, 5)}
                 <small>%</small>
               </strong>
               <span>{data.own.rank}位</span>
@@ -64,7 +64,7 @@ export function Leaderboard({ refreshKey }) {
           ) : (
             <table className="ranking-table">
               <caption className="sr-only">
-                七角形の自己ベスト上位50件。同じ一致度は同順位です。
+                七角形の自己ベスト上位50件。一致度は小数5桁表示、順位は小数2桁で判定します。
               </caption>
               <thead>
                 <tr>
@@ -87,7 +87,7 @@ export function Leaderboard({ refreshKey }) {
                       )}
                     </th>
                     <td>
-                      {formatScore(entry.score)}
+                      {entry.scoreDisplay ?? formatScore(entry.score, 5)}
                       <small>%</small>
                     </td>
                   </tr>
@@ -96,7 +96,7 @@ export function Leaderboard({ refreshKey }) {
             </table>
           )}
           <p className="ranking-footnote">
-            同じ一致度は同順位。同じブラウザーの自己ベストを1件記録します。Cookieを消すと、自分の記録として確認できなくなります。
+            一致度は小数5桁表示、順位は小数2桁で判定。同じブラウザーの自己ベストを1件記録します。Cookieを消すと、自分の記録として確認できなくなります。
           </p>
         </>
       )}
@@ -172,7 +172,10 @@ export function RankingSubmission({
       ) : saved ? (
         <p className="ranking-saved" role="status">
           記録しました。あなたの自己ベストは{" "}
-          <strong>{formatScore(saved.own.score)}%</strong>、{saved.own.rank}
+          <strong>
+            {saved.own.scoreDisplay ?? formatScore(saved.own.score, 5)}%
+          </strong>
+          、{saved.own.rank}
           位です。
         </p>
       ) : (
