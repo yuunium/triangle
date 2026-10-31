@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "sankaku",
+  "name": "nanakaku",
   "account_id": "a3b8b5dbd5db2069949866961fe7df5d",
   "main": "cloudflare/index.mjs",
   "compatibility_date": "2026-10-29",

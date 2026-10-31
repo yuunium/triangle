@@ -1,10 +1,6 @@
 import { POLYGON_NAMES, formatScore, scoreMessage } from "./geometry.mjs";
 
-export const GAME_URL =
-  import.meta.env?.VITE_RANKING_ENABLED === "true" &&
-  typeof window !== "undefined"
-    ? new URL("/", window.location.href).href
-    : "https://yuunium.github.io/triangle/";
+export const GAME_URL = "https://nanakaku.linetoslack.workers.dev/";
 export function resultShareText(sides, score) {
   return `${POLYGON_NAMES[sides]}との一致度 ${formatScore(score)}%！\n感覚で、ぴったりを探そう。 #正七角形ゲーム`;
 }
@@ -41,7 +37,7 @@ export async function createResultImage(points, sides, score) {
   ctx.fillRect(0, 0, 1200, 675);
   ctx.fillStyle = "#1c2a33";
   ctx.font = `600 21px ${font}`;
-  ctx.fillText("S A N K A K U", 58, 66);
+  ctx.fillText("N A N A K A K U", 58, 66);
   ctx.fillStyle = "#6b7780";
   ctx.font = `400 18px ${font}`;
   ctx.fillText(`${sides} POINTS CHALLENGE`, 58, 102);
@@ -62,7 +58,7 @@ export async function createResultImage(points, sides, score) {
   ctx.font = `400 18px ${font}`;
   ctx.fillText("感覚で、ぴったりを探そう。", 58, 564);
   ctx.font = `400 15px ${font}`;
-  ctx.fillText("yuunium.github.io/triangle", 58, 607);
+  ctx.fillText(new URL(GAME_URL).hostname, 58, 607);
 
   const minX = Math.min(...points.map((p) => p.x)),
     maxX = Math.max(...points.map((p) => p.x));
@@ -125,7 +121,7 @@ export async function createResultImage(points, sides, score) {
       "image/png",
     ),
   );
-  const filename = `sankaku-${sides}-${scoreText.replace(".", "-")}.png`;
+  const filename = `nanakaku-${sides}-${scoreText.replace(".", "-")}.png`;
   return {
     blob,
     file: new File([blob], filename, { type: "image/png" }),

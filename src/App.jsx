@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowRightIcon } from "@phosphor-icons/react/dist/csr/ArrowRight";
 import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react/dist/csr/ArrowCounterClockwise";
 import { HandPointingIcon } from "@phosphor-icons/react/dist/csr/HandPointing";
-import { TriangleIcon } from "@phosphor-icons/react/dist/csr/Triangle";
 import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus";
 import { ShareResult } from "./ShareResult.jsx";
 import { Leaderboard, RankingSubmission } from "./Ranking.jsx";
@@ -276,8 +275,8 @@ export function App() {
     message = result ? scoreMessage(result.score, sides) : null;
   useEffect(() => {
     document.title = started
-      ? `SANKAKU — ${shapeName}、つくれる？`
-      : "SANKAKU — 正七角形、つくれる？";
+      ? `NANAKAKU — ${shapeName}、つくれる？`
+      : "NANAKAKU — 正七角形、つくれる？";
   }, [shapeName, started]);
   function edit() {
     setResult(null);
@@ -339,8 +338,19 @@ export function App() {
     >
       <header className="brand-row">
         <div className="brand">
-          <TriangleIcon weight="bold" size={22} aria-hidden="true" />
-          <span>SANKAKU</span>
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <polygon points="12,2 19.82,5.77 21.75,14.23 16.34,21.01 7.66,21.01 2.25,14.23 4.18,5.77" />
+          </svg>
+          <span>NANAKAKU</span>
         </div>
         <span className="brand-tagline">感覚で、ぴったりを探そう。</span>
       </header>

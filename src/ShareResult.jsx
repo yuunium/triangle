@@ -63,7 +63,7 @@ export function ShareResult({ points, result, sides }) {
       // Call synchronously from this user gesture; generating the PNG here would lose activation.
       await navigator.share({
         files: [image.file],
-        title: "SANKAKUの結果",
+        title: "NANAKAKUの結果",
         text: `${resultShareText(sides, result.score)}\n${challengeUrl(sides)}`,
       });
       setMessage("共有メニューを開きました。投稿は共有先で確定してください。");
