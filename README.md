@@ -57,6 +57,14 @@ Cloudflareのデプロイは上記コマンドで実行します。GitHub連携�
 
 以前の`https://yuunium.github.io/triangle/`は新サイトへ移動するページです。`.github/workflows/pages.yml`がmainへのpush時にテストして`npm run build:pages`の出力`dist/pages`を公開します。形を指定するクエリは維持します。テンプレート由来の`worker/`と`.openai/`はSites互換用として残し、Cloudflare本番の処理は`cloudflare/index.mjs`に分離しています。
 
+## 独自ドメインの接続状況
+
+公開先として`https://sankaku.yuunium.jp/`を選択し、Cloudflareの無料ゾーンとWorkerへのカスタムドメイン設定は追加済みです。2026年10月31日時点では、XServerのネームサーバー変更の最終確認待ちで、公開DNSはまだ切り替えていません。切り替え先は`gemma.ns.cloudflare.com`と`yevgen.ns.cloudflare.com`です。XServerの「DNSレコード設定」にNSを追加する操作ではなく、「ネームサーバー設定」で指定します。
+
+既存の`ganryo-server`、`nachibutton`、`pazzcolla-redirect`は、自動スキャンでは見つからなかったため、XServerの設定画面から接続先を引き継いでCloudflareへ追加しました。3件ともDNSのみ・TTL300秒です。既存のGoogle所有確認用TXTも保存しています。旧ネームサーバーのSOA・NSは移行対象に含めません。
+
+カスタムドメインはダッシュボードで管理しています。DNSとHTTPSが確認できるまでは、既存のworkers.devとGitHub Pagesの転送先を維持します。親の`yuunium.jp`へ同じゲームを公開する設定は追加していません。AdSenseの登録単位と親ドメインの確認ファイル配信については、ゲームの公開先とは分けて設定内容を確認します。
+
 ## 採点
 
 nを角の数、面積をAとして、以下を計算します。
