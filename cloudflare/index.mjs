@@ -111,20 +111,79 @@ async function bodyJson(request) {
     throw new ApiError(400, "送信内容を読み取れませんでした。");
   }
 }
-const rankedSql = `SELECT player_id, name, score, score_raw, achieved_at,
-  RANK() OVER (ORDER BY score DESC) AS rank FROM records WHERE scoring_version = ?`;
-async function leaderboard(db, id) {
-  const entries = await db
-    .prepare(
-      `SELECT * FROM (${rankedSql}) ORDER BY score DESC, achieved_at ASC, player_id ASC LIMIT 50`,
-    )
-    .bind(SCORING_VERSION)
-    .all();
+// Limit the indexed scan before computing ranks, rather than ranking every record
+// on every page load. RANK on this prefix preserves ties, including the 50th row.
+const topSql = `WITH top_records AS MATERIALIZED (
+  SELECT player_id, name, score, score_raw, achieved_at FROM records
+  WHERE scoring_version = ?
+  ORDER BY score DESC, achieved_at ASC, player_id ASC LIMIT 50
+)
+SELECT *, RANK() OVER (ORDER BY score DESC) AS rank FROM top_records
+ORDER BY score DESC, achieved_at ASC, player_id ASC`;
+
+function cacheKey(request, key) {
+  const url = new URL(request.url);
+  url.pathname = `/__nanakaku_internal_cache/v1/${SCORING_VERSION}/${key}`;
+  url.search = "";
+  return new Request(url);
+}
+async function cachedValue(cache, key, ttl, load, refresh) {
+  if (cache && !refresh) {
+    try {
+      const response = await cache.match(key);
+      if (response) return await response.json();
+    } catch {
+      // Cache failures must not make the database unavailable.
+    }
+  }
+  const value = await load();
+  if (cache) {
+    try {
+      await cache.put(
+        key,
+        Response.json(value, {
+          headers: { "Cache-Control": `public, max-age=${ttl}` },
+        }),
+      );
+    } catch {
+      // A successful database result remains usable if the cache cannot store it.
+    }
+  }
+  return value;
+}
+async function leaderboard(db, id, request, cache, refresh = false) {
+  // Internal cache entries never go directly to an HTTP client. In particular,
+  // player IDs stay server-side and each response computes its own `mine` flags.
+  const entries = await cachedValue(
+    cache,
+    cacheKey(request, "top"),
+    60,
+    async () => (await db.prepare(topSql).bind(SCORING_VERSION).all()).results,
+    refresh,
+  );
   const own = id
-    ? await db
-        .prepare(`SELECT * FROM (${rankedSql}) WHERE player_id = ?`)
-        .bind(SCORING_VERSION, id)
-        .first()
+    ? await cachedValue(
+        cache,
+        cacheKey(request, `own/${id}`),
+        30,
+        async () => {
+          const record = await db
+            .prepare(
+              "SELECT player_id, name, score, score_raw, achieved_at FROM records WHERE player_id = ? AND scoring_version = ?",
+            )
+            .bind(id, SCORING_VERSION)
+            .first();
+          if (!record) return null;
+          const { rank } = await db
+            .prepare(
+              "SELECT COUNT(*) + 1 AS rank FROM records WHERE scoring_version = ? AND score > ?",
+            )
+            .bind(SCORING_VERSION, record.score)
+            .first();
+          return { ...record, rank };
+        },
+        refresh,
+      )
     : null;
   const publicRow = (r) => ({
     name: r.name,
@@ -135,11 +194,15 @@ async function leaderboard(db, id) {
     mine: r.player_id === id,
   });
   return {
-    entries: entries.results.map(publicRow),
+    entries: entries.map(publicRow),
     own: own ? publicRow(own) : null,
   };
 }
-export async function handleApi(request, env) {
+export async function handleApi(
+  request,
+  env,
+  cache = globalThis.caches?.default,
+) {
   const url = new URL(request.url),
     path = url.pathname;
   const isRead = path === "/api/leaderboard" && request.method === "GET";
@@ -161,7 +224,7 @@ export async function handleApi(request, env) {
     const allowed = limiter && (await limiter.limit({ key: ip })).success;
     if (!allowed)
       throw new ApiError(429, "少し時間をおいて、もう一度お試しください。");
-    if (isRead) return json(await leaderboard(env.DB, id));
+    if (isRead) return json(await leaderboard(env.DB, id, request, cache));
     const body = await bodyJson(request),
       now = Date.now();
     if (isRound) {
@@ -206,7 +269,7 @@ export async function handleApi(request, env) {
       )
         throw new ApiError(409, "この回は登録済みです。");
       return json({
-        ...(await leaderboard(env.DB, id)),
+        ...(await leaderboard(env.DB, id, request, cache, true)),
         submittedScore: round.score,
       });
     }
@@ -237,13 +300,35 @@ export async function handleApi(request, env) {
       .bind(input.roundId, id)
       .first();
     return json(
-      { ...(await leaderboard(env.DB, id)), submittedScore: saved.score },
+      {
+        ...(await leaderboard(env.DB, id, request, cache, true)),
+        submittedScore: saved.score,
+      },
       201,
     );
   } catch (error) {
     if (error instanceof ApiError)
       return json({ error: error.message }, error.status);
     console.error("Ranking API failed", error.message);
+    const detail = `${error.message} ${error.cause?.message || ""}`;
+    if (
+      /daily.*(?:read|write|row).*limit|(?:read|write|row).*daily.*limit/i.test(
+        detail,
+      )
+    ) {
+      const now = Date.now();
+      const reset = (Math.floor(now / 86400000) + 1) * 86400000;
+      return json(
+        {
+          code: "D1_DAILY_LIMIT",
+          error:
+            "本日のランキング利用上限に達したため、一時停止しています。日本時間の午前9時に再開します。ゲームの採点は引き続き遊べます。",
+          retryAt: new Date(reset).toISOString(),
+        },
+        503,
+        { "Retry-After": String(Math.ceil((reset - now) / 1000)) },
+      );
+    }
     return json(
       {
         error:

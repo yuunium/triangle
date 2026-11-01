@@ -21,8 +21,9 @@ const sample = {
   points: regular(7),
   score: 1,
 };
-function setup() {
+function setup(cache) {
   const sqlite = new DatabaseSync(":memory:");
+  const queries = [];
   const migrations = new URL("../cloudflare/migrations/", import.meta.url);
   for (const file of readdirSync(migrations)
     .filter((name) => name.endsWith(".sql"))
@@ -32,8 +33,14 @@ function setup() {
     prepare(sql) {
       const bound = (args) => ({
         bind: (...next) => bound(next),
-        all: async () => ({ results: sqlite.prepare(sql).all(...args) }),
-        first: async () => sqlite.prepare(sql).get(...args) || null,
+        all: async () => {
+          queries.push(sql);
+          return { results: sqlite.prepare(sql).all(...args) };
+        },
+        first: async () => {
+          queries.push(sql);
+          return sqlite.prepare(sql).get(...args) || null;
+        },
       });
       return bound([]);
     },
@@ -68,13 +75,36 @@ function setup() {
         },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       });
-      const response = await handleApi(request, env);
+      const response = await handleApi(request, env, cache);
       if (response.headers.has("Set-Cookie"))
         cookie = response.headers.get("Set-Cookie").split(";")[0];
       return { response, data: await response.json() };
     };
   };
-  return { sqlite, env, client };
+  return { sqlite, env, client, queries };
+}
+
+function memoryCache() {
+  const entries = new Map();
+  let now = 0;
+  return {
+    advance(milliseconds) {
+      now += milliseconds;
+    },
+    async match(key) {
+      const entry = entries.get(key.url);
+      return entry && entry.expires > now ? entry.response.clone() : undefined;
+    },
+    async put(key, response) {
+      const ttl = Number(
+        response.headers.get("Cache-Control").match(/max-age=(\d+)/)[1],
+      );
+      entries.set(key.url, {
+        response: response.clone(),
+        expires: now + ttl * 1000,
+      });
+    },
+  };
 }
 test("submission recomputes the score, normalizes names and rejects unsupported or unsafe data", () => {
   assert.equal(
@@ -276,6 +306,181 @@ test("leaderboard returns 50 entries and retains the current browser's rank outs
     assert.equal(data.entries[0].rank, 1);
     assert.equal(data.entries.at(-1).rank, 50);
     assert.equal(data.own.rank, 56);
+  } finally {
+    sqlite.close();
+  }
+});
+
+test("repeated public leaderboard reads share a 60-second database snapshot", async () => {
+  const cache = memoryCache();
+  const { sqlite, client, queries } = setup(cache);
+  try {
+    const a = client(),
+      b = client();
+    for (let i = 0; i < 100; i++) {
+      const { response, data } = await (i % 2 ? a : b)("leaderboard");
+      assert.equal(response.status, 200);
+      assert.equal(response.headers.get("Cache-Control"), "no-store");
+      assert.equal(response.headers.get("Set-Cookie"), null);
+      assert.deepEqual(data, { entries: [], own: null });
+    }
+    assert.equal(queries.length, 1);
+    cache.advance(60001);
+    await a("leaderboard");
+    assert.equal(queries.length, 2);
+  } finally {
+    sqlite.close();
+  }
+});
+
+test("cached rankings isolate players and a submission refreshes the submitting player's best immediately", async () => {
+  const cache = memoryCache();
+  const { sqlite, client, queries } = setup(cache);
+  try {
+    const a = client(),
+      b = client(),
+      anonymous = client();
+    const ar = await a("rounds", { sides: 7 });
+    const br = await b("rounds", { sides: 7 });
+    await a("leaderboard");
+    const saved = await a("scores", {
+      ...sample,
+      name: "A",
+      roundId: ar.data.roundId,
+    });
+    assert.equal(saved.data.own.name, "A");
+    assert.equal(saved.data.entries[0].mine, true);
+    const other = await b("leaderboard");
+    assert.equal(other.data.own, null);
+    assert.equal(other.data.entries[0].mine, false);
+    await b("scores", { ...sample, name: "B", roundId: br.data.roundId });
+    const before = queries.length;
+    const aView = await a("leaderboard");
+    const bView = await b("leaderboard");
+    const publicView = await anonymous("leaderboard");
+    assert.equal(queries.length, before);
+    assert.deepEqual(
+      aView.data.entries.map((r) => r.rank),
+      [1, 1],
+    );
+    assert.deepEqual(
+      aView.data.entries.filter((r) => r.mine).map((r) => r.name),
+      ["A"],
+    );
+    assert.deepEqual(
+      bView.data.entries.filter((r) => r.mine).map((r) => r.name),
+      ["B"],
+    );
+    assert.equal(
+      publicView.data.entries.some((r) => r.mine),
+      false,
+    );
+    assert.equal(publicView.data.own, null);
+    assert.equal(
+      JSON.stringify(publicView.data).includes(ar.data.roundId),
+      false,
+    );
+    assert.equal(publicView.data.entries[0].player_id, undefined);
+    cache.advance(30001);
+    await a("leaderboard");
+    assert.equal(queries.length, before + 2);
+  } finally {
+    sqlite.close();
+  }
+});
+
+test("top-50 ranks preserve ties and skip older scoring versions before limiting", async () => {
+  const { sqlite, client, queries } = setup();
+  try {
+    const insert = sqlite.prepare(
+      "INSERT INTO records(player_id,name,score,score_raw,achieved_at,round_id,points_json,scoring_version) VALUES(?,?,?,?,?,?,?,?)",
+    );
+    for (let i = 0; i < 2500; i++) {
+      insert.run(
+        crypto.randomUUID(),
+        `player${i}`,
+        i < 2 ? 99 : 98,
+        i < 2 ? 99 : 98,
+        i,
+        crypto.randomUUID(),
+        "[]",
+        SCORING_VERSION,
+      );
+    }
+    insert.run(
+      crypto.randomUUID(),
+      "old",
+      100,
+      100,
+      0,
+      crypto.randomUUID(),
+      "[]",
+      "old",
+    );
+    const { data } = await client()("leaderboard");
+    assert.equal(data.entries.length, 50);
+    assert.deepEqual(
+      data.entries.slice(0, 4).map((r) => r.rank),
+      [1, 1, 3, 3],
+    );
+    assert.equal(data.entries.at(-1).rank, 3);
+    const plan = sqlite
+      .prepare(`EXPLAIN QUERY PLAN ${queries[0]}`)
+      .all(SCORING_VERSION);
+    assert.ok(
+      plan.some((r) =>
+        /SEARCH records USING INDEX records_ranking/.test(r.detail),
+      ),
+    );
+  } finally {
+    sqlite.close();
+  }
+});
+
+test("a cache outage falls back to D1 without breaking rankings", async () => {
+  const cache = {
+    async match() {
+      throw new Error("cache unavailable");
+    },
+    async put() {
+      throw new Error("cache unavailable");
+    },
+  };
+  const { sqlite, client } = setup(cache);
+  try {
+    const { response, data } = await client()("leaderboard");
+    assert.equal(response.status, 200);
+    assert.deepEqual(data, { entries: [], own: null });
+  } finally {
+    sqlite.close();
+  }
+});
+
+test("D1 daily limits return the reset time while unrelated failures stay generic", async () => {
+  const { sqlite, env, client } = setup();
+  try {
+    env.DB.prepare = () => {
+      throw new Error(
+        "D1_ERROR: Your account has exceeded D1's free tier daily row read limit.",
+      );
+    };
+    const { response, data } = await client()("leaderboard");
+    assert.equal(response.status, 503);
+    assert.equal(data.code, "D1_DAILY_LIMIT");
+    assert.match(data.error, /午前9時/);
+    assert.match(data.retryAt, /T00:00:00\.000Z$/);
+    assert.ok(Number(response.headers.get("Retry-After")) > 0);
+    assert.ok(Number(response.headers.get("Retry-After")) <= 86400);
+    env.DB.prepare = () => {
+      throw new Error("private database detail");
+    };
+    const generic = await client()("leaderboard");
+    assert.equal(generic.response.status, 503);
+    assert.equal(generic.data.code, undefined);
+    assert.equal(
+      JSON.stringify(generic.data).includes("private database detail"),
+      false,
+    );
   } finally {
     sqlite.close();
   }
